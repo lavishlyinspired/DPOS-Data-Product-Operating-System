@@ -1,0 +1,11 @@
+customer_id,email,name,phone,address,segment,created_at,is_active
+INVALID001,not-an-email,John Smith,+12025551234,"{""street"":""123 Main St""}",premium,2023-01-15T10:30:00Z,true
+CUST000001,duplicate@email.com,Duplicate ID,+12025552345,"{""street"":""456 Oak Ave""}",standard,2023-02-20T14:45:00Z,true
+,missing@email.com,Missing ID,+12025553456,"{""street"":""789 Pine Rd""}",standard,2023-03-10T09:15:00Z,true
+CUST000099,alice@email.com,,+12025554567,"{""street"":""321 Elm St""}",premium,2023-04-05T16:20:00Z,true
+CUST000100,charlie@email.com,Charlie Brown,invalid-phone,"{""street"":""654 Maple Dr""}",standard,2023-05-12T11:00:00Z,true
+CUST000101,diana@email.com,Diana Prince,+12025556789,"{""street"":""987 Cedar Ln""}",invalid_segment,2023-06-18T13:30:00Z,true
+CUST000102,edward@email.com,Edward Stark,+12025557890,"{""street"":""147 Birch Way""}",premium,invalid-date,true
+CUST000103,fiona@email.com,Fiona Green,+12025558901,null,standard,2023-08-30T15:10:00Z,true
+CUST000104,,George Miller,+12025559012,"{""street"":""369 Cherry Blvd""}",premium,2023-09-14T10:25:00Z,true
+CUST000105,helen.white@,Helen White,+12025550123,"{""street"":""480 Spruce Ave""}",vip,2023-10-08T12:40:00Z,true

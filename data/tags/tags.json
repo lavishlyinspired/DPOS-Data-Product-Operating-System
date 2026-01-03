@@ -1,0 +1,148 @@
+{
+  "tags": [
+    {
+      "name": "PII",
+      "category": "classification",
+      "description": "Personally Identifiable Information",
+      "color": "#FF0000",
+      "requires_approval": true,
+      "auto_detected": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Sensitive",
+      "category": "classification",
+      "description": "Sensitive business information",
+      "color": "#FF6600",
+      "requires_approval": true,
+      "auto_detected": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Confidential",
+      "category": "classification",
+      "description": "Confidential data requiring restricted access",
+      "color": "#FF9900",
+      "requires_approval": true,
+      "auto_detected": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Public",
+      "category": "classification",
+      "description": "Publicly available data",
+      "color": "#00FF00",
+      "requires_approval": false,
+      "auto_detected": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Internal",
+      "category": "classification",
+      "description": "Internal use only",
+      "color": "#0099FF",
+      "requires_approval": false,
+      "auto_detected": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Revenue",
+      "category": "business",
+      "description": "Revenue-related data products",
+      "color": "#00CC00",
+      "requires_approval": false,
+      "auto_detected": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Customer",
+      "category": "business",
+      "description": "Customer-related data products",
+      "color": "#0066FF",
+      "requires_approval": false,
+      "auto_detected": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Product",
+      "category": "business",
+      "description": "Product-related data products",
+      "color": "#9900FF",
+      "requires_approval": false,
+      "auto_detected": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Operations",
+      "category": "business",
+      "description": "Operational data products",
+      "color": "#FF00FF",
+      "requires_approval": false,
+      "auto_detected": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "RealTime",
+      "category": "technical",
+      "description": "Real-time data products with streaming updates",
+      "color": "#FF3300",
+      "requires_approval": false,
+      "auto_detected": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Batch",
+      "category": "technical",
+      "description": "Batch-processed data products",
+      "color": "#3399FF",
+      "requires_approval": false,
+      "auto_detected": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Master",
+      "category": "technical",
+      "description": "Master data products",
+      "color": "#33CC33",
+      "requires_approval": false,
+      "auto_detected": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "Event",
+      "category": "technical",
+      "description": "Event-based data products",
+      "color": "#FF9933",
+      "requires_approval": false,
+      "auto_detected": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "GDPR",
+      "category": "compliance",
+      "description": "Subject to GDPR regulations",
+      "color": "#003399",
+      "requires_approval": true,
+      "auto_detected": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "CCPA",
+      "category": "compliance",
+      "description": "Subject to CCPA regulations",
+      "color": "#006699",
+      "requires_approval": true,
+      "auto_detected": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "name": "PCI-DSS",
+      "category": "compliance",
+      "description": "Subject to PCI-DSS requirements",
+      "color": "#990033",
+      "requires_approval": true,
+      "auto_detected": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}

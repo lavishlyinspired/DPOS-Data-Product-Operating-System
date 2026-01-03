@@ -1,0 +1,129 @@
+import sys, os, json, glob
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.graph.manager import Neo4jManager
+from src.graph.schema import init_constraints
+from src.utils.config import Config
+
+class DataLoader:
+    def __init__(self):
+        self.cfg = Config()
+        self.mgr = Neo4jManager()
+        self.base_dir = self.cfg.data_dir
+
+    def load_json_files(self, relative_path, process_func):
+        full_path = os.path.join(self.base_dir, relative_path)
+        if not os.path.exists(full_path):
+            print(f"⚠️  Path not found: {full_path}")
+            return
+        
+        files = glob.glob(os.path.join(full_path, "*.json"))
+        for file_path in files:
+            print(f"📥 Loading {file_path}...")
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+                # Handle single object vs list
+                if isinstance(data, dict):
+                    process_func(data)
+                elif isinstance(data, list):
+                    for item in data:
+                        process_func(item)
+
+    # --- Specific Entity Loaders ---
+
+    def load_domain(self, data):
+        self.mgr.execute_query("MERGE (:Domain {id: $id}) SET d += $props", {"id": data['id'], "props": data})
+
+    def load_product(self, data):
+        q = "MATCH (d:Domain {id: $did}) MERGE (p:DataProduct {id: $id}) SET p += $props MERGE (p)-[:IN_DOMAIN]->(d)"
+        self.mgr.execute_query(q, {"did": data['domain_id'], "id": data['id'], "props": data})
+
+    def load_schema(self, data):
+        # Create Schema Node
+        q = "MATCH (p:DataProduct {id: $pid}) MERGE (s:Schema {id: $id}) SET s += $props MERGE (p)-[:HAS_SCHEMA]->(s)"
+        self.mgr.execute_query(q, {"pid": data['product_id'], "id": data['id'], "props": data})
+        
+        # Create Fields
+        for field in data.get('fields', []):
+            fq = "MATCH (s:Schema {id: $sid}) MERGE (f:Field {id: $id}) SET f += $props MERGE (s)-[:HAS_FIELD]->(f)"
+            self.mgr.execute_query(fq, {"sid": data['id'], "id": field['id'], "props": field})
+
+    def load_contract(self, data):
+        # Create Contract
+        q = "MATCH (p:DataProduct {id: $pid}) MERGE (c:Contract {id: $id}) SET c += $props MERGE (p)-[:HAS_CONTRACT]->(c)"
+        self.mgr.execute_query(q, {"pid": data['product_id'], "id": data['id'], "props": data})
+        
+        # Create Rules
+        for rule in data.get('rules', []):
+            rq = "MATCH (c:Contract {id: $cid}) MERGE (r:Rule {id: $id}) SET r += $props MERGE (c)-[:HAS_RULE]->(r)"
+            self.mgr.execute_query(rq, {"cid": data['id'], "id": rule['id'], "props": rule})
+
+    def load_sla(self, data):
+        # SLAs link to Product (via Contract usually, but direct link for simplicity here)
+        q = "MATCH (p:DataProduct {id: $pid}) CREATE (s:SLA {id: $id}) SET s += $props MERGE (p)-[:HAS_SLA]->(s)"
+        self.mgr.execute_query(q, {"pid": data['product_id'], "id": data['id'], "props": data})
+
+    def load_policy(self, data):
+        q = "MERGE (pol:Policy {id: $id}) SET pol += $props"
+        self.mgr.execute_query(q, {"id": data['id'], "props": data})
+        
+        if data.get('scope') == 'DOMAIN':
+            lq = "MATCH (pol:Policy {id: $pid}), (d:Domain {id: $did}) MERGE (pol)-[:APPLIES_TO_DOMAIN]->(d)"
+            self.mgr.execute_query(lq, {"pid": data['id'], "did": data['target_id']})
+            
+        # Attach Policy Rules
+        for pr in data.get('rules', []):
+            prq = "MATCH (pol:Policy {id: $pid}) MERGE (r:PolicyRule {id: $id}) SET r += $props MERGE (pol)-[:HAS_POLICY_RULE]->(r)"
+            self.mgr.execute_query(prq, {"pid": data['id'], "id": pr['id'], "props": pr})
+
+    def load_port(self, data):
+        label = "InputPort" if "in_" in data['id'] else "OutputPort"
+        q = f"MATCH (p:DataProduct {{id: $pid}}) MERGE (port:{label} {{id: $id}}) SET port += $props MERGE (p)-[:HAS_{label.upper()}]->(port)"
+        self.mgr.execute_query(q, {"pid": data['product_id'], "id": data['id'], "props": data})
+
+    def load_pipeline(self, data):
+        q = "MERGE (pip:Pipeline {id: $id}) SET pip += $props"
+        self.mgr.execute_query(q, {"id": data['id'], "props": data})
+        
+        # Link Writes To Product
+        lq = "MATCH (pip:Pipeline {id: $pid}), (p:DataProduct {id: $did}) MERGE (pip)-[:WRITES_TO]->(p)"
+        self.mgr.execute_query(lq, {"pid": data['id'], "did": data['product_id']})
+
+    def load_user(self, data):
+        q = "MERGE (u:User {id: $id}) SET u += $props"
+        self.mgr.execute_query(q, {"id": data['id'], "props": data})
+
+    def load_tag(self, data):
+        q = "MERGE (t:Tag {name: $name}) SET t += $props"
+        self.mgr.execute_query(q, {"name": data['name'], "props": data})
+
+    def run(self):
+        print("🚀 Starting Data Load from Files...")
+        init_constraints(self.mgr)
+        
+        self.load_json_files("domains", self.load_domain)
+        self.load_json_files("products", self.load_product)
+        self.load_json_files("schemas", self.load_schema)
+        self.load_json_files("contracts", self.load_contract)
+        self.load_json_files("slas", self.load_sla)
+        self.load_json_files("policies", self.load_policy)
+        self.load_json_files("ports", self.load_port)
+        self.load_json_files("pipelines", self.load_pipeline)
+        self.load_json_files("users", self.load_user)
+        self.load_json_files("tags", self.load_tag)
+        
+        # Create Static Lineage (Consumes_From)
+        print("🔗 Creating Static Lineage Edges...")
+        self.mgr.execute_query("""
+            MATCH (dp1:DataProduct {id: 'DP001'}), (dp2:DataProduct {id: 'DP003'})
+            MERGE (dp2)-[:CONSUMES_FROM]->(dp1)
+        """)
+        self.mgr.execute_query("""
+            MATCH (dp1:DataProduct {id: 'DP002'}), (dp2:DataProduct {id: 'DP003'})
+            MERGE (dp2)-[:CONSUMES_FROM]->(dp1)
+        """)
+
+        print("✅ Data Load Complete")
+
+if __name__ == "__main__":
+    DataLoader().run()

@@ -1,0 +1,84 @@
+{
+  "input_ports": [
+    {
+      "id": "inport_dp001_crm",
+      "product_id": "DP001",
+      "name": "CRM Database",
+      "type": "database",
+      "connection_string": "postgresql://crm.company.internal:5432/crm_prod",
+      "database": "crm_prod",
+      "schema_name": "public",
+      "table_name": "customers",
+      "refresh_frequency": "hourly",
+      "last_refresh": "2024-12-30T10:00:00Z",
+      "status": "active",
+      "created_at": "2024-01-20T00:00:00Z"
+    },
+    {
+      "id": "inport_dp002_payments",
+      "product_id": "DP002",
+      "name": "Payment Gateway",
+      "type": "kafka",
+      "connection_string": "kafka://kafka.company.internal:9092",
+      "topic": "payments.completed",
+      "consumer_group": "dpos-transactions-consumer",
+      "refresh_frequency": "realtime",
+      "last_refresh": "2024-12-30T10:30:00Z",
+      "status": "active",
+      "created_at": "2024-02-01T00:00:00Z"
+    },
+    {
+      "id": "inport_dp003_checkout",
+      "product_id": "DP003",
+      "name": "Checkout Service",
+      "type": "kafka",
+      "connection_string": "kafka://kafka.company.internal:9092",
+      "topic": "checkout.orders",
+      "consumer_group": "dpos-orders-consumer",
+      "refresh_frequency": "realtime",
+      "last_refresh": "2024-12-30T10:30:00Z",
+      "status": "active",
+      "created_at": "2024-02-15T00:00:00Z"
+    },
+    {
+      "id": "inport_dp004_logistics",
+      "product_id": "DP004",
+      "name": "Logistics API",
+      "type": "api",
+      "endpoint_url": "https://logistics.internal/api/v1/shipments",
+      "http_method": "GET",
+      "refresh_frequency": "hourly",
+      "last_refresh": "2024-12-30T10:00:00Z",
+      "status": "active",
+      "created_at": "2024-03-01T00:00:00Z"
+    },
+    {
+      "id": "inport_dp005_wms",
+      "product_id": "DP005",
+      "name": "Warehouse Management System",
+      "type": "database",
+      "connection_string": "postgresql://wms.company.internal:5432/wms_prod",
+      "database": "wms_prod",
+      "schema_name": "public",
+      "table_name": "stock_levels",
+      "refresh_frequency": "realtime",
+      "last_refresh": "2024-12-30T10:30:00Z",
+      "status": "active",
+      "created_at": "2024-03-15T00:00:00Z"
+    },
+    {
+      "id": "inport_dp006_pim",
+      "product_id": "DP006",
+      "name": "Product Information Management",
+      "type": "database",
+      "connection_string": "postgresql://pim.company.internal:5432/pim_prod",
+      "database": "pim_prod",
+      "schema_name": "public",
+      "table_name": "products",
+      "refresh_frequency": "daily",
+      "last_refresh": "2024-12-30T00:00:00Z",
+      "status": "active",
+      "created_at": "2024-01-20T00:00:00Z"
+    }
+  ]
+}

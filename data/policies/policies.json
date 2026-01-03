@@ -1,0 +1,168 @@
+{
+  "policies": [
+    {
+      "id": "policy_global_quality",
+      "name": "Global Data Quality Policy",
+      "description": "Baseline data quality rules applied to all data products across the organization",
+      "scope": "GLOBAL",
+      "priority": 100,
+      "is_active": true,
+      "effective_from": "2024-01-01T00:00:00Z",
+      "effective_until": null,
+      "approved_by": "governance@company.com",
+      "approved_at": "2024-01-01T00:00:00Z",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "rules": [
+        {
+          "id": "prule_global_01",
+          "type": "null_rate",
+          "description": "All required fields should have less than 10% nulls",
+          "threshold_override": 0.10,
+          "severity_override": "warning",
+          "enabled": true
+        },
+        {
+          "id": "prule_global_02",
+          "type": "freshness",
+          "description": "All data products should be updated within 24 hours",
+          "max_age_seconds": 86400,
+          "enforcement_override": "warn",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "policy_global_pii",
+      "name": "Global PII Protection Policy",
+      "description": "PII protection requirements for all data products containing personal information",
+      "scope": "GLOBAL",
+      "priority": 150,
+      "is_active": true,
+      "effective_from": "2024-01-01T00:00:00Z",
+      "effective_until": null,
+      "approved_by": "governance@company.com",
+      "approved_at": "2024-01-01T00:00:00Z",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "rules": [
+        {
+          "id": "prule_pii_01",
+          "type": "custom",
+          "description": "PII fields must be encrypted at rest",
+          "custom_expression": "pii_encrypted = true",
+          "enforcement_override": "strict",
+          "enabled": true
+        },
+        {
+          "id": "prule_pii_02",
+          "type": "custom",
+          "description": "PII access must be logged",
+          "custom_expression": "pii_access_logged = true",
+          "enforcement_override": "strict",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "policy_domain_customer",
+      "name": "Customer Domain Policy",
+      "description": "Data quality and governance rules specific to Customer domain",
+      "scope": "DOMAIN",
+      "domain_id": "DOM001",
+      "priority": 200,
+      "is_active": true,
+      "effective_from": "2024-01-15T00:00:00Z",
+      "effective_until": null,
+      "approved_by": "customer-team@company.com",
+      "approved_at": "2024-01-15T00:00:00Z",
+      "created_at": "2024-01-15T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "rules": [
+        {
+          "id": "prule_customer_01",
+          "type": "freshness",
+          "description": "Customer data should be updated within 1 hour",
+          "max_age_seconds": 3600,
+          "enforcement_override": "strict",
+          "enabled": true
+        },
+        {
+          "id": "prule_customer_02",
+          "type": "null_rate",
+          "description": "Email field should have less than 1% nulls in customer domain",
+          "field": "email",
+          "threshold_override": 0.01,
+          "severity_override": "error",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "policy_domain_order",
+      "name": "Order Domain Policy",
+      "description": "Data quality and governance rules specific to Order domain",
+      "scope": "DOMAIN",
+      "domain_id": "DOM002",
+      "priority": 200,
+      "is_active": true,
+      "effective_from": "2024-01-15T00:00:00Z",
+      "effective_until": null,
+      "approved_by": "order-team@company.com",
+      "approved_at": "2024-01-15T00:00:00Z",
+      "created_at": "2024-01-15T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "rules": [
+        {
+          "id": "prule_order_01",
+          "type": "freshness",
+          "description": "Order data requires real-time updates (5 minutes max)",
+          "max_age_seconds": 300,
+          "enforcement_override": "strict",
+          "enabled": true
+        },
+        {
+          "id": "prule_order_02",
+          "type": "custom",
+          "description": "Order data must maintain referential integrity",
+          "custom_expression": "referential_integrity = true",
+          "enforcement_override": "strict",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "policy_domain_inventory",
+      "name": "Inventory Domain Policy",
+      "description": "Data quality and governance rules specific to Inventory domain",
+      "scope": "DOMAIN",
+      "domain_id": "DOM003",
+      "priority": 200,
+      "is_active": true,
+      "effective_from": "2024-01-15T00:00:00Z",
+      "effective_until": null,
+      "approved_by": "inventory-team@company.com",
+      "approved_at": "2024-01-15T00:00:00Z",
+      "created_at": "2024-01-15T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "rules": [
+        {
+          "id": "prule_inventory_01",
+          "type": "custom",
+          "description": "Inventory data accuracy must be above 99%",
+          "custom_expression": "accuracy >= 0.99",
+          "enforcement_override": "strict",
+          "enabled": true
+        },
+        {
+          "id": "prule_inventory_02",
+          "type": "freshness",
+          "description": "Inventory levels require real-time updates",
+          "max_age_seconds": 300,
+          "enforcement_override": "strict",
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}

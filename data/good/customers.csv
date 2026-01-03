@@ -1,0 +1,26 @@
+customer_id,email,name,phone,address,segment,created_at,is_active
+CUST000001,john.smith@email.com,John Smith,+12025551234,"{""street"":""123 Main St"",""city"":""New York"",""state"":""NY"",""zip"":""10001""}",premium,2023-01-15T10:30:00Z,true
+CUST000002,jane.doe@email.com,Jane Doe,+12025552345,"{""street"":""456 Oak Ave"",""city"":""Los Angeles"",""state"":""CA"",""zip"":""90001""}",vip,2023-02-20T14:45:00Z,true
+CUST000003,bob.wilson@email.com,Bob Wilson,+12025553456,"{""street"":""789 Pine Rd"",""city"":""Chicago"",""state"":""IL"",""zip"":""60601""}",standard,2023-03-10T09:15:00Z,true
+CUST000004,alice.johnson@email.com,Alice Johnson,+12025554567,"{""street"":""321 Elm St"",""city"":""Houston"",""state"":""TX"",""zip"":""77001""}",premium,2023-04-05T16:20:00Z,true
+CUST000005,charlie.brown@email.com,Charlie Brown,+12025555678,"{""street"":""654 Maple Dr"",""city"":""Phoenix"",""state"":""AZ"",""zip"":""85001""}",standard,2023-05-12T11:00:00Z,true
+CUST000006,diana.prince@email.com,Diana Prince,+12025556789,"{""street"":""987 Cedar Ln"",""city"":""Philadelphia"",""state"":""PA"",""zip"":""19101""}",vip,2023-06-18T13:30:00Z,true
+CUST000007,edward.stark@email.com,Edward Stark,+12025557890,"{""street"":""147 Birch Way"",""city"":""San Antonio"",""state"":""TX"",""zip"":""78201""}",premium,2023-07-22T08:45:00Z,true
+CUST000008,fiona.green@email.com,Fiona Green,+12025558901,"{""street"":""258 Walnut Ct"",""city"":""San Diego"",""state"":""CA"",""zip"":""92101""}",standard,2023-08-30T15:10:00Z,true
+CUST000009,george.miller@email.com,George Miller,+12025559012,"{""street"":""369 Cherry Blvd"",""city"":""Dallas"",""state"":""TX"",""zip"":""75201""}",premium,2023-09-14T10:25:00Z,true
+CUST000010,helen.white@email.com,Helen White,+12025550123,"{""street"":""480 Spruce Ave"",""city"":""San Jose"",""state"":""CA"",""zip"":""95101""}",vip,2023-10-08T12:40:00Z,true
+CUST000011,ivan.petrov@email.com,Ivan Petrov,+12025551235,"{""street"":""591 Ash St"",""city"":""Austin"",""state"":""TX"",""zip"":""78701""}",standard,2023-11-02T09:55:00Z,true
+CUST000012,julia.chen@email.com,Julia Chen,+12025552346,"{""street"":""702 Poplar Rd"",""city"":""Jacksonville"",""state"":""FL"",""zip"":""32099""}",premium,2023-12-11T14:20:00Z,true
+CUST000013,kevin.lee@email.com,Kevin Lee,+12025553457,"{""street"":""813 Willow Dr"",""city"":""Fort Worth"",""state"":""TX"",""zip"":""76101""}",standard,2024-01-05T11:35:00Z,true
+CUST000014,laura.martinez@email.com,Laura Martinez,+12025554568,"{""street"":""924 Sycamore Ln"",""city"":""Columbus"",""state"":""OH"",""zip"":""43201""}",vip,2024-02-14T16:50:00Z,true
+CUST000015,michael.taylor@email.com,Michael Taylor,+12025555679,"{""street"":""1035 Redwood Ct"",""city"":""Charlotte"",""state"":""NC"",""zip"":""28201""}",premium,2024-03-20T08:15:00Z,true
+CUST000016,nancy.anderson@email.com,Nancy Anderson,+12025556780,"{""street"":""1146 Sequoia Way"",""city"":""San Francisco"",""state"":""CA"",""zip"":""94101""}",standard,2024-04-25T13:40:00Z,true
+CUST000017,oliver.thomas@email.com,Oliver Thomas,+12025557891,"{""street"":""1257 Magnolia Blvd"",""city"":""Indianapolis"",""state"":""IN"",""zip"":""46201""}",premium,2024-05-30T10:05:00Z,true
+CUST000018,patricia.jackson@email.com,Patricia Jackson,+12025558902,"{""street"":""1368 Dogwood Ave"",""city"":""Seattle"",""state"":""WA"",""zip"":""98101""}",vip,2024-06-15T15:25:00Z,true
+CUST000019,quincy.harris@email.com,Quincy Harris,+12025559013,"{""street"":""1479 Cypress St"",""city"":""Denver"",""state"":""CO"",""zip"":""80201""}",standard,2024-07-22T09:45:00Z,true
+CUST000020,rachel.moore@email.com,Rachel Moore,+12025550124,"{""street"":""1580 Juniper Rd"",""city"":""Washington"",""state"":""DC"",""zip"":""20001""}",premium,2024-08-28T14:10:00Z,true
+CUST000021,samuel.clark@email.com,Samuel Clark,+12025551236,"{""street"":""1691 Hawthorn Dr"",""city"":""Boston"",""state"":""MA"",""zip"":""02101""}",standard,2024-09-10T11:30:00Z,true
+CUST000022,tina.lewis@email.com,Tina Lewis,+12025552347,"{""street"":""1702 Laurel Ln"",""city"":""El Paso"",""state"":""TX"",""zip"":""79901""}",vip,2024-10-05T16:55:00Z,true
+CUST000023,ulysses.robinson@email.com,Ulysses Robinson,+12025553458,"{""street"":""1813 Holly Ct"",""city"":""Nashville"",""state"":""TN"",""zip"":""37201""}",premium,2024-11-12T08:20:00Z,true
+CUST000024,victoria.walker@email.com,Victoria Walker,+12025554569,"{""street"":""1924 Ivy Way"",""city"":""Detroit"",""state"":""MI"",""zip"":""48201""}",standard,2024-12-01T13:45:00Z,true
+CUST000025,william.hall@email.com,William Hall,+12025555680,"{""street"":""2035 Fern Blvd"",""city"":""Oklahoma City"",""state"":""OK"",""zip"":""73101""}",premium,2024-12-15T10:15:00Z,true

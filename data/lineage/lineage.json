@@ -1,0 +1,49 @@
+{
+  "lineage": [
+    {
+      "source_product_id": "DP001",
+      "target_product_id": "DP002",
+      "relationship_type": "referential",
+      "field": "customer_id",
+      "description": "Customer transactions reference customer profiles for customer identity",
+      "discovered_at": "2024-02-01T00:00:00Z",
+      "last_verified": "2024-12-30T00:00:00Z"
+    },
+    {
+      "source_product_id": "DP001",
+      "target_product_id": "DP003",
+      "relationship_type": "referential",
+      "field": "customer_id",
+      "description": "Orders reference customer profiles for customer information",
+      "discovered_at": "2024-02-15T00:00:00Z",
+      "last_verified": "2024-12-30T00:00:00Z"
+    },
+    {
+      "source_product_id": "DP006",
+      "target_product_id": "DP003",
+      "relationship_type": "referential",
+      "field": "product_id",
+      "description": "Orders reference product catalog for product information",
+      "discovered_at": "2024-02-15T00:00:00Z",
+      "last_verified": "2024-12-30T00:00:00Z"
+    },
+    {
+      "source_product_id": "DP003",
+      "target_product_id": "DP004",
+      "relationship_type": "referential",
+      "field": "order_id",
+      "description": "Shipments reference orders for order fulfillment",
+      "discovered_at": "2024-03-01T00:00:00Z",
+      "last_verified": "2024-12-30T00:00:00Z"
+    },
+    {
+      "source_product_id": "DP006",
+      "target_product_id": "DP005",
+      "relationship_type": "referential",
+      "field": "product_id",
+      "description": "Inventory levels reference product catalog for product tracking",
+      "discovered_at": "2024-03-15T00:00:00Z",
+      "last_verified": "2024-12-30T00:00:00Z"
+    }
+  ]
+}

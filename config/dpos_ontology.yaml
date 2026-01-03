@@ -1,0 +1,518 @@
+# DPOS Ontology Definition
+# Formal schema for the Data Product Operating System knowledge graph
+# Used by LLMs for query generation and knowledge extraction
+
+version: "1.0"
+namespace: "dpos"
+description: "Ontology for Data Product Operating System - managing data products, contracts, and governance"
+
+# ============================================================================
+# NODE TYPES
+# ============================================================================
+nodes:
+  # ---------------------------------------------------------------------------
+  # Data Assets
+  # ---------------------------------------------------------------------------
+  DataProduct:
+    description: "A curated, high-quality data asset managed as a product with clear ownership and contracts"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+        description: "Unique identifier (e.g., DP001)"
+      name:
+        type: string
+        required: true
+        description: "Human-readable name"
+      description:
+        type: string
+        description: "Detailed description of the data product"
+      type:
+        type: string
+        enum: [source, derived, aggregate, feature]
+        description: "Type of data product"
+      status:
+        type: string
+        enum: [active, deprecated, draft, archived]
+        default: active
+        description: "Current lifecycle status"
+      owner:
+        type: string
+        required: true
+        description: "Email of the data product owner"
+      team:
+        type: string
+        description: "Team responsible for the product"
+      created_at:
+        type: datetime
+        description: "When the product was created"
+      updated_at:
+        type: datetime
+        description: "Last update timestamp"
+    relationships:
+      IN_DOMAIN:
+        target: Domain
+        cardinality: one
+        required: true
+        description: "Domain this product belongs to"
+      HAS_CONTRACT:
+        target: Contract
+        cardinality: many
+        description: "Contracts governing this product"
+      HAS_SCHEMA:
+        target: Schema
+        cardinality: one
+        description: "Schema definition for this product"
+      HAS_INCIDENT:
+        target: Incident
+        cardinality: many
+        description: "Incidents affecting this product"
+      CONSUMES_FROM:
+        target: DataProduct
+        cardinality: many
+        description: "Upstream data dependencies (lineage)"
+      HAS_METRIC:
+        target: Metric
+        cardinality: many
+        description: "Quality and usage metrics"
+
+  Domain:
+    description: "Business domain that groups related data products"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      name:
+        type: string
+        required: true
+      description:
+        type: string
+      owner:
+        type: string
+        description: "Domain owner email"
+      team:
+        type: string
+    relationships:
+      HAS_PRODUCT:
+        target: DataProduct
+        cardinality: many
+        description: "Products in this domain"
+
+  Schema:
+    description: "Schema definition for a data product"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      version:
+        type: string
+        default: "1.0"
+      format:
+        type: string
+        enum: [json, avro, parquet, csv]
+    relationships:
+      HAS_FIELD:
+        target: Field
+        cardinality: many
+
+  Field:
+    description: "A field/column in a data product schema"
+    properties:
+      id:
+        type: string
+        required: true
+      name:
+        type: string
+        required: true
+      data_type:
+        type: string
+        enum: [string, integer, float, boolean, datetime, json, array]
+      is_nullable:
+        type: boolean
+        default: true
+      is_pii:
+        type: boolean
+        default: false
+        description: "Whether field contains PII"
+      description:
+        type: string
+
+  # ---------------------------------------------------------------------------
+  # Governance Entities
+  # ---------------------------------------------------------------------------
+  Contract:
+    description: "Data contract defining quality rules and SLAs between producer and consumer"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      name:
+        type: string
+      is_active:
+        type: boolean
+        default: true
+      enforcement_mode:
+        type: string
+        enum: [strict, warn, log]
+        default: strict
+      producer:
+        type: string
+        description: "Producer team/product"
+      consumer:
+        type: string
+        description: "Consumer team/product"
+      created_at:
+        type: datetime
+      expires_at:
+        type: datetime
+    relationships:
+      HAS_RULE:
+        target: Rule
+        cardinality: many
+      HAS_SLA:
+        target: SLA
+        cardinality: one
+
+  Rule:
+    description: "Validation rule within a contract"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      name:
+        type: string
+      type:
+        type: string
+        enum: [null_rate, pattern, enum, range, uniqueness, freshness, custom]
+      field:
+        type: string
+        description: "Field this rule applies to"
+      threshold:
+        type: float
+        description: "Threshold value for the rule"
+      pattern:
+        type: string
+        description: "Regex pattern for pattern rules"
+      allowed_values:
+        type: array
+        description: "Allowed values for enum rules"
+      severity:
+        type: string
+        enum: [low, medium, high, critical]
+        default: medium
+      enabled:
+        type: boolean
+        default: true
+
+  SLA:
+    description: "Service Level Agreement for data product"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      freshness_seconds:
+        type: integer
+        description: "Max age of data in seconds"
+      availability_percent:
+        type: float
+        default: 99.9
+      latency_ms:
+        type: integer
+        description: "Max query latency in milliseconds"
+
+  Policy:
+    description: "Data governance policy"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      name:
+        type: string
+      description:
+        type: string
+      scope:
+        type: string
+        enum: [global, domain, product]
+      priority:
+        type: integer
+        default: 0
+      is_active:
+        type: boolean
+        default: true
+      enforcement:
+        type: string
+        enum: [strict, warn, audit]
+    relationships:
+      APPLIES_TO_DOMAIN:
+        target: Domain
+        cardinality: many
+      APPLIES_TO_PRODUCT:
+        target: DataProduct
+        cardinality: many
+
+  # ---------------------------------------------------------------------------
+  # Operational Entities
+  # ---------------------------------------------------------------------------
+  Incident:
+    description: "Data quality or availability incident"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      type:
+        type: string
+        enum: [CONTRACT_VIOLATION, SLA_BREACH, PIPELINE_FAILURE, SCHEMA_DRIFT, DATA_QUALITY]
+      severity:
+        type: string
+        enum: [low, medium, high, critical]
+      status:
+        type: string
+        enum: [open, investigating, mitigating, resolved, closed]
+        default: open
+      description:
+        type: string
+      resolution:
+        type: string
+      created_at:
+        type: datetime
+      resolved_at:
+        type: datetime
+    relationships:
+      AFFECTS:
+        target: DataProduct
+        cardinality: one
+        description: "Product affected by this incident"
+      HANDLED_BY:
+        target: AgentExecution
+        cardinality: many
+        description: "AI agent actions taken"
+
+  AgentExecution:
+    description: "Record of AI agent execution"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      agent:
+        type: string
+        enum: [HealingAgent, StewardAgent, ImpactAgent, QAAgent, DiscoveryAgent, CypherAgent]
+      outcome:
+        type: string
+      created_at:
+        type: datetime
+      thread_id:
+        type: string
+        description: "LangGraph thread ID for resumability"
+
+  Pipeline:
+    description: "Data pipeline/ETL process"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      name:
+        type: string
+      status:
+        type: string
+        enum: [active, paused, failed, completed]
+      schedule:
+        type: string
+        description: "Cron expression"
+      has_fallback:
+        type: boolean
+        default: false
+      fallback_source:
+        type: string
+      using_fallback:
+        type: boolean
+        default: false
+      last_run:
+        type: datetime
+      success_rate:
+        type: float
+    relationships:
+      READS_FROM:
+        target: DataProduct
+        cardinality: many
+      WRITES_TO:
+        target: DataProduct
+        cardinality: many
+
+  Metric:
+    description: "Quality or usage metric for a data product"
+    properties:
+      id:
+        type: string
+        required: true
+      type:
+        type: string
+        enum: [quality_score, null_rate, freshness, row_count, query_count, latency]
+      value:
+        type: float
+      recorded_at:
+        type: datetime
+
+  ValidationReport:
+    description: "Result of contract validation"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      result:
+        type: string
+        enum: [pass, fail, warn]
+      action:
+        type: string
+        enum: [allow, block, quarantine]
+      total_records:
+        type: integer
+      violations:
+        type: integer
+      created_at:
+        type: datetime
+
+  # ---------------------------------------------------------------------------
+  # Actor Entities
+  # ---------------------------------------------------------------------------
+  User:
+    description: "User who consumes or owns data products"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      name:
+        type: string
+      email:
+        type: string
+        unique: true
+      role:
+        type: string
+        enum: [data_engineer, data_scientist, analyst, steward, admin]
+      department:
+        type: string
+    relationships:
+      OWNS:
+        target: DataProduct
+        cardinality: many
+      CONSUMES:
+        target: DataProduct
+        cardinality: many
+
+  Team:
+    description: "Team that owns or consumes data"
+    properties:
+      id:
+        type: string
+        required: true
+        unique: true
+      name:
+        type: string
+      department:
+        type: string
+    relationships:
+      HAS_MEMBER:
+        target: User
+        cardinality: many
+
+# ============================================================================
+# RELATIONSHIP TYPES (for documentation and LLM context)
+# ============================================================================
+relationships:
+  CONSUMES_FROM:
+    description: "Data lineage - downstream product consumes from upstream"
+    source: DataProduct
+    target: DataProduct
+    properties:
+      since:
+        type: datetime
+      transformation:
+        type: string
+        enum: [direct, aggregation, join, filter, enrichment]
+
+  DERIVED_FROM:
+    description: "Product is derived from another (alternative lineage)"
+    source: DataProduct
+    target: DataProduct
+
+  DEPENDS_ON:
+    description: "Pipeline dependency on data product"
+    source: Pipeline
+    target: DataProduct
+
+  HAS_INCIDENT:
+    description: "Product has an incident"
+    source: DataProduct
+    target: Incident
+
+  HANDLED_BY:
+    description: "Incident was handled by an agent"
+    source: Incident
+    target: AgentExecution
+
+# ============================================================================
+# QUERY EXAMPLES (for LLM context)
+# ============================================================================
+query_examples:
+  count_products_by_domain:
+    description: "Count data products grouped by domain"
+    cypher: |
+      MATCH (p:DataProduct)-[:IN_DOMAIN]->(d:Domain)
+      RETURN d.name as domain, count(p) as product_count
+      ORDER BY product_count DESC
+
+  find_critical_incidents:
+    description: "Find all open critical incidents"
+    cypher: |
+      MATCH (p:DataProduct)-[:HAS_INCIDENT]->(i:Incident)
+      WHERE i.severity = 'critical' AND i.status = 'open'
+      RETURN p.name as product, i.description as incident, i.created_at
+      ORDER BY i.created_at DESC
+
+  trace_lineage_upstream:
+    description: "Trace data lineage upstream from a product"
+    cypher: |
+      MATCH path = (p:DataProduct {id: $product_id})-[:CONSUMES_FROM*1..5]->(source)
+      RETURN [n in nodes(path) | n.name] as lineage_path
+
+  find_downstream_consumers:
+    description: "Find all downstream consumers of a product"
+    cypher: |
+      MATCH (source:DataProduct {id: $product_id})<-[:CONSUMES_FROM*1..3]-(consumer)
+      RETURN DISTINCT consumer.id, consumer.name, consumer.owner
+
+  products_with_contract_violations:
+    description: "Find products with recent contract violations"
+    cypher: |
+      MATCH (p:DataProduct)-[:HAS_INCIDENT]->(i:Incident)
+      WHERE i.type = 'CONTRACT_VIOLATION' AND i.status = 'open'
+      RETURN p.name, count(i) as violations
+      ORDER BY violations DESC
+
+  health_dashboard:
+    description: "Get health overview for dashboard"
+    cypher: |
+      MATCH (p:DataProduct)
+      OPTIONAL MATCH (p)-[:HAS_INCIDENT]->(i:Incident {status: 'open'})
+      WITH p, count(i) as open_incidents
+      RETURN
+        count(p) as total_products,
+        sum(CASE WHEN open_incidents = 0 THEN 1 ELSE 0 END) as healthy_products,
+        sum(CASE WHEN open_incidents > 0 THEN 1 ELSE 0 END) as degraded_products
+
+  pipeline_status:
+    description: "Get pipeline status overview"
+    cypher: |
+      MATCH (pipe:Pipeline)
+      RETURN pipe.status as status, count(*) as count

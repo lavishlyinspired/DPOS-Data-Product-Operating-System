@@ -1,0 +1,2 @@
+# Convenience wrapper so you can run `pip install -r requirements.txt` from inside `dpos-ecommerce/`
+-r ../requirements.txt

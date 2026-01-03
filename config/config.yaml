@@ -1,0 +1,31 @@
+# Global Configuration
+app:
+  name: "DPOS"
+  environment: "development"
+
+# Neo4j Configuration
+neo4j:
+  uri: "bolt://localhost:7687"
+  # Auth details are in .env
+
+# Kafka Configuration
+kafka:
+  bootstrap_servers: "localhost:9092"
+  consumer_group_id: "dpos_streaming_group"
+  topic_prefix_raw: "dpos.raw."
+  topic_prefix_valid: "dpos.valid."
+  topic_dlq: "dpos.dlq"
+
+# Enforcement Settings
+enforcement:
+  batch_size: 100
+  checkpoint_interval_seconds: 60
+
+# Incident Settings
+incidents:
+  auto_escalate_minutes: 15
+  notification_channel: "#dpos-alerts" # Slack
+ai:
+  ollama_url: "http://localhost:11434"
+  model: "llama2"
+  embed_model: "nomic-embed-text"

@@ -1,0 +1,522 @@
+{
+  "schemas": [
+    {
+      "id": "schema_dp001_v1",
+      "product_id": "DP001",
+      "version": "1.0.0",
+      "format": "avro",
+      "is_current": true,
+      "created_at": "2024-01-20T00:00:00Z",
+      "created_by": "customer-team@company.com",
+      "fields": [
+        {
+          "id": "field_dp001_customer_id",
+          "name": "customer_id",
+          "type": "string",
+          "description": "Unique customer identifier",
+          "nullable": false,
+          "unique": true,
+          "is_pii": false,
+          "pattern": "^CUST[0-9]{6}$",
+          "source_system": "CRM",
+          "source_field": "id"
+        },
+        {
+          "id": "field_dp001_email",
+          "name": "email",
+          "type": "string",
+          "description": "Customer email address",
+          "nullable": false,
+          "unique": true,
+          "is_pii": true,
+          "pii_type": "email",
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+          "source_system": "CRM",
+          "source_field": "email"
+        },
+        {
+          "id": "field_dp001_name",
+          "name": "name",
+          "type": "string",
+          "description": "Customer full name",
+          "nullable": false,
+          "unique": false,
+          "is_pii": true,
+          "pii_type": "name",
+          "source_system": "CRM",
+          "source_field": "full_name"
+        },
+        {
+          "id": "field_dp001_phone",
+          "name": "phone",
+          "type": "string",
+          "description": "Customer phone number",
+          "nullable": true,
+          "unique": false,
+          "is_pii": true,
+          "pii_type": "phone",
+          "pattern": "^\\+?[1-9]\\d{1,14}$",
+          "source_system": "CRM",
+          "source_field": "phone_number"
+        },
+        {
+          "id": "field_dp001_address",
+          "name": "address",
+          "type": "object",
+          "description": "Customer mailing address",
+          "nullable": true,
+          "unique": false,
+          "is_pii": true,
+          "pii_type": "address",
+          "source_system": "CRM",
+          "source_field": "address"
+        },
+        {
+          "id": "field_dp001_segment",
+          "name": "segment",
+          "type": "string",
+          "description": "Customer segment",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "allowed_values": ["standard", "premium", "vip"],
+          "source_system": "CRM",
+          "source_field": "customer_segment"
+        },
+        {
+          "id": "field_dp001_created_at",
+          "name": "created_at",
+          "type": "timestamp",
+          "description": "Account creation timestamp",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "source_system": "CRM",
+          "source_field": "created_date"
+        },
+        {
+          "id": "field_dp001_is_active",
+          "name": "is_active",
+          "type": "boolean",
+          "description": "Whether customer account is active",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "default_value": true,
+          "source_system": "CRM",
+          "source_field": "active_flag"
+        }
+      ]
+    },
+    {
+      "id": "schema_dp002_v1",
+      "product_id": "DP002",
+      "version": "1.0.0",
+      "format": "avro",
+      "is_current": true,
+      "created_at": "2024-02-01T00:00:00Z",
+      "created_by": "customer-team@company.com",
+      "fields": [
+        {
+          "id": "field_dp002_transaction_id",
+          "name": "transaction_id",
+          "type": "string",
+          "description": "Unique transaction identifier",
+          "nullable": false,
+          "unique": true,
+          "is_pii": false,
+          "pattern": "^TXN[0-9]{10}$"
+        },
+        {
+          "id": "field_dp002_customer_id",
+          "name": "customer_id",
+          "type": "string",
+          "description": "Reference to customer",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "reference_product": "DP001",
+          "reference_field": "customer_id"
+        },
+        {
+          "id": "field_dp002_amount",
+          "name": "amount",
+          "type": "decimal",
+          "description": "Transaction amount",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "min_value": 0.01,
+          "max_value": 1000000
+        },
+        {
+          "id": "field_dp002_currency",
+          "name": "currency",
+          "type": "string",
+          "description": "Currency code",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "allowed_values": ["USD", "EUR", "GBP", "CAD"]
+        },
+        {
+          "id": "field_dp002_payment_method",
+          "name": "payment_method",
+          "type": "string",
+          "description": "Payment method used",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "allowed_values": ["credit_card", "debit_card", "paypal", "bank_transfer"]
+        },
+        {
+          "id": "field_dp002_timestamp",
+          "name": "timestamp",
+          "type": "timestamp",
+          "description": "Transaction timestamp",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp002_status",
+          "name": "status",
+          "type": "string",
+          "description": "Transaction status",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "allowed_values": ["pending", "completed", "failed", "refunded"]
+        }
+      ]
+    },
+    {
+      "id": "schema_dp003_v1",
+      "product_id": "DP003",
+      "version": "1.0.0",
+      "format": "avro",
+      "is_current": true,
+      "created_at": "2024-02-15T00:00:00Z",
+      "created_by": "order-team@company.com",
+      "fields": [
+        {
+          "id": "field_dp003_order_id",
+          "name": "order_id",
+          "type": "string",
+          "description": "Unique order identifier",
+          "nullable": false,
+          "unique": true,
+          "is_pii": false,
+          "pattern": "^ORD[0-9]{10}$"
+        },
+        {
+          "id": "field_dp003_customer_id",
+          "name": "customer_id",
+          "type": "string",
+          "description": "Reference to customer",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "reference_product": "DP001",
+          "reference_field": "customer_id"
+        },
+        {
+          "id": "field_dp003_order_date",
+          "name": "order_date",
+          "type": "timestamp",
+          "description": "Order placement date",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp003_total_amount",
+          "name": "total_amount",
+          "type": "decimal",
+          "description": "Total order amount",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "min_value": 0.01
+        },
+        {
+          "id": "field_dp003_status",
+          "name": "status",
+          "type": "string",
+          "description": "Order status",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "allowed_values": ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]
+        },
+        {
+          "id": "field_dp003_items",
+          "name": "items",
+          "type": "array",
+          "description": "Order line items",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp003_shipping_address",
+          "name": "shipping_address",
+          "type": "object",
+          "description": "Shipping address",
+          "nullable": false,
+          "unique": false,
+          "is_pii": true,
+          "pii_type": "address"
+        }
+      ]
+    },
+    {
+      "id": "schema_dp004_v1",
+      "product_id": "DP004",
+      "version": "1.0.0",
+      "format": "avro",
+      "is_current": true,
+      "created_at": "2024-03-01T00:00:00Z",
+      "created_by": "order-team@company.com",
+      "fields": [
+        {
+          "id": "field_dp004_shipment_id",
+          "name": "shipment_id",
+          "type": "string",
+          "description": "Unique shipment identifier",
+          "nullable": false,
+          "unique": true,
+          "is_pii": false,
+          "pattern": "^SHP[0-9]{10}$"
+        },
+        {
+          "id": "field_dp004_order_id",
+          "name": "order_id",
+          "type": "string",
+          "description": "Reference to order",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "reference_product": "DP003",
+          "reference_field": "order_id"
+        },
+        {
+          "id": "field_dp004_carrier",
+          "name": "carrier",
+          "type": "string",
+          "description": "Shipping carrier",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "allowed_values": ["fedex", "ups", "usps", "dhl"]
+        },
+        {
+          "id": "field_dp004_tracking_number",
+          "name": "tracking_number",
+          "type": "string",
+          "description": "Carrier tracking number",
+          "nullable": true,
+          "unique": true,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp004_status",
+          "name": "status",
+          "type": "string",
+          "description": "Shipment status",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "allowed_values": ["created", "picked_up", "in_transit", "out_for_delivery", "delivered", "returned"]
+        },
+        {
+          "id": "field_dp004_shipped_date",
+          "name": "shipped_date",
+          "type": "timestamp",
+          "description": "Ship date",
+          "nullable": true,
+          "unique": false,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp004_delivered_date",
+          "name": "delivered_date",
+          "type": "timestamp",
+          "description": "Delivery date",
+          "nullable": true,
+          "unique": false,
+          "is_pii": false
+        }
+      ]
+    },
+    {
+      "id": "schema_dp005_v1",
+      "product_id": "DP005",
+      "version": "1.0.0",
+      "format": "avro",
+      "is_current": true,
+      "created_at": "2024-03-15T00:00:00Z",
+      "created_by": "inventory-team@company.com",
+      "fields": [
+        {
+          "id": "field_dp005_inventory_id",
+          "name": "inventory_id",
+          "type": "string",
+          "description": "Unique inventory record identifier",
+          "nullable": false,
+          "unique": true,
+          "is_pii": false,
+          "pattern": "^INV[0-9]{10}$"
+        },
+        {
+          "id": "field_dp005_product_id",
+          "name": "product_id",
+          "type": "string",
+          "description": "Reference to product",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "reference_product": "DP006",
+          "reference_field": "product_id"
+        },
+        {
+          "id": "field_dp005_warehouse_id",
+          "name": "warehouse_id",
+          "type": "string",
+          "description": "Warehouse identifier",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp005_quantity",
+          "name": "quantity",
+          "type": "integer",
+          "description": "Available quantity",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "min_value": 0
+        },
+        {
+          "id": "field_dp005_reserved_quantity",
+          "name": "reserved_quantity",
+          "type": "integer",
+          "description": "Reserved quantity",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "min_value": 0,
+          "default_value": 0
+        },
+        {
+          "id": "field_dp005_reorder_point",
+          "name": "reorder_point",
+          "type": "integer",
+          "description": "Reorder threshold",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "min_value": 0
+        },
+        {
+          "id": "field_dp005_last_updated",
+          "name": "last_updated",
+          "type": "timestamp",
+          "description": "Last update timestamp",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false
+        }
+      ]
+    },
+    {
+      "id": "schema_dp006_v1",
+      "product_id": "DP006",
+      "version": "1.0.0",
+      "format": "avro",
+      "is_current": true,
+      "created_at": "2024-01-20T00:00:00Z",
+      "created_by": "inventory-team@company.com",
+      "fields": [
+        {
+          "id": "field_dp006_product_id",
+          "name": "product_id",
+          "type": "string",
+          "description": "Unique product identifier",
+          "nullable": false,
+          "unique": true,
+          "is_pii": false,
+          "pattern": "^PROD[0-9]{6}$"
+        },
+        {
+          "id": "field_dp006_sku",
+          "name": "sku",
+          "type": "string",
+          "description": "Stock keeping unit",
+          "nullable": false,
+          "unique": true,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp006_name",
+          "name": "name",
+          "type": "string",
+          "description": "Product name",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp006_description",
+          "name": "description",
+          "type": "string",
+          "description": "Product description",
+          "nullable": true,
+          "unique": false,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp006_category",
+          "name": "category",
+          "type": "string",
+          "description": "Product category",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false
+        },
+        {
+          "id": "field_dp006_price",
+          "name": "price",
+          "type": "decimal",
+          "description": "Product price",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "min_value": 0.01
+        },
+        {
+          "id": "field_dp006_currency",
+          "name": "currency",
+          "type": "string",
+          "description": "Price currency",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "allowed_values": ["USD", "EUR", "GBP", "CAD"],
+          "default_value": "USD"
+        },
+        {
+          "id": "field_dp006_is_active",
+          "name": "is_active",
+          "type": "boolean",
+          "description": "Whether product is active",
+          "nullable": false,
+          "unique": false,
+          "is_pii": false,
+          "default_value": true
+        }
+      ]
+    }
+  ]
+}

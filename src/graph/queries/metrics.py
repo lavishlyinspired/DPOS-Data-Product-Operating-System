@@ -1,0 +1,2 @@
+CREATE_METRIC = "MATCH (p:DataProduct {id: $id}) CREATE (m:Metric {id: randomUUID(), timestamp: datetime(), target_id: $id, type: $type, value: $val}) MERGE (p)-[:HAS_METRIC]->(m)"
+CREATE_INCIDENT = "MATCH (p:DataProduct {id: $id}) CREATE (i:Incident {id: randomUUID(), timestamp: datetime(), target_id: $id, type: $type, desc: $desc, status: 'open'}) MERGE (p)-[:HAS_INCIDENT]->(i)"

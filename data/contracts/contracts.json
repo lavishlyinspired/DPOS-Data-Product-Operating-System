@@ -1,0 +1,380 @@
+{
+  "contracts": [
+    {
+      "id": "contract_dp001",
+      "product_id": "DP001",
+      "name": "Customer Profiles Contract",
+      "description": "Data quality contract for customer profile data ensuring PII protection and data accuracy",
+      "version": "1.0.0",
+      "enforcement_mode": "strict",
+      "effective_from": "2024-01-20T00:00:00Z",
+      "effective_until": null,
+      "is_active": true,
+      "created_at": "2024-01-20T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "created_by": "data-steward@company.com",
+      "approved_by": "governance@company.com",
+      "rules": [
+        {
+          "id": "rule_dp001_01",
+          "name": "customer_id_unique",
+          "description": "Customer ID must be unique across all records",
+          "type": "uniqueness",
+          "field": "customer_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp001_02",
+          "name": "email_format",
+          "description": "Email must be in valid format",
+          "type": "pattern",
+          "field": "email",
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp001_03",
+          "name": "name_not_null",
+          "description": "Customer name cannot be null",
+          "type": "null_rate",
+          "field": "name",
+          "threshold": 0.0,
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp001_04",
+          "name": "segment_valid",
+          "description": "Segment must be one of allowed values",
+          "type": "enum",
+          "field": "segment",
+          "allowed_values": ["standard", "premium", "vip"],
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp001_05",
+          "name": "phone_null_rate",
+          "description": "Phone should be populated for at least 80% of records",
+          "type": "null_rate",
+          "field": "phone",
+          "threshold": 0.20,
+          "severity": "warning",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "contract_dp002",
+      "product_id": "DP002",
+      "name": "Customer Transactions Contract",
+      "description": "Data quality contract for transaction data ensuring financial accuracy",
+      "version": "1.0.0",
+      "enforcement_mode": "strict",
+      "effective_from": "2024-02-01T00:00:00Z",
+      "effective_until": null,
+      "is_active": true,
+      "created_at": "2024-02-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "created_by": "data-steward@company.com",
+      "approved_by": "governance@company.com",
+      "rules": [
+        {
+          "id": "rule_dp002_01",
+          "name": "transaction_id_unique",
+          "description": "Transaction ID must be unique",
+          "type": "uniqueness",
+          "field": "transaction_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp002_02",
+          "name": "customer_ref_valid",
+          "description": "Customer ID must exist in customer profiles",
+          "type": "referential",
+          "field": "customer_id",
+          "reference_product": "DP001",
+          "reference_field": "customer_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp002_03",
+          "name": "amount_range",
+          "description": "Amount must be positive and within valid range",
+          "type": "range",
+          "field": "amount",
+          "min_value": 0.01,
+          "max_value": 1000000,
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp002_04",
+          "name": "freshness_check",
+          "description": "Data should be no older than 1 hour",
+          "type": "freshness",
+          "max_age_seconds": 3600,
+          "severity": "warning",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "contract_dp003",
+      "product_id": "DP003",
+      "name": "Orders Contract",
+      "description": "Data quality contract for order data ensuring order integrity",
+      "version": "1.0.0",
+      "enforcement_mode": "strict",
+      "effective_from": "2024-02-15T00:00:00Z",
+      "effective_until": null,
+      "is_active": true,
+      "created_at": "2024-02-15T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "created_by": "data-steward@company.com",
+      "approved_by": "governance@company.com",
+      "rules": [
+        {
+          "id": "rule_dp003_01",
+          "name": "order_id_unique",
+          "description": "Order ID must be unique",
+          "type": "uniqueness",
+          "field": "order_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp003_02",
+          "name": "customer_ref_valid",
+          "description": "Customer ID must exist in customer profiles",
+          "type": "referential",
+          "field": "customer_id",
+          "reference_product": "DP001",
+          "reference_field": "customer_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp003_03",
+          "name": "total_positive",
+          "description": "Total amount must be positive",
+          "type": "range",
+          "field": "total_amount",
+          "min_value": 0.01,
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp003_04",
+          "name": "status_valid",
+          "description": "Status must be one of allowed values",
+          "type": "enum",
+          "field": "status",
+          "allowed_values": ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"],
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp003_05",
+          "name": "freshness_check",
+          "description": "Data should be no older than 5 minutes",
+          "type": "freshness",
+          "max_age_seconds": 300,
+          "severity": "error",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "contract_dp004",
+      "product_id": "DP004",
+      "name": "Shipments Contract",
+      "description": "Data quality contract for shipment tracking data",
+      "version": "1.0.0",
+      "enforcement_mode": "quarantine",
+      "effective_from": "2024-03-01T00:00:00Z",
+      "effective_until": null,
+      "is_active": true,
+      "created_at": "2024-03-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "created_by": "data-steward@company.com",
+      "approved_by": "governance@company.com",
+      "rules": [
+        {
+          "id": "rule_dp004_01",
+          "name": "shipment_id_unique",
+          "description": "Shipment ID must be unique",
+          "type": "uniqueness",
+          "field": "shipment_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp004_02",
+          "name": "order_ref_valid",
+          "description": "Order ID must exist in orders",
+          "type": "referential",
+          "field": "order_id",
+          "reference_product": "DP003",
+          "reference_field": "order_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp004_03",
+          "name": "carrier_valid",
+          "description": "Carrier must be one of allowed values",
+          "type": "enum",
+          "field": "carrier",
+          "allowed_values": ["fedex", "ups", "usps", "dhl"],
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp004_04",
+          "name": "status_valid",
+          "description": "Status must be one of allowed values",
+          "type": "enum",
+          "field": "status",
+          "allowed_values": ["created", "picked_up", "in_transit", "out_for_delivery", "delivered", "returned"],
+          "severity": "error",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "contract_dp005",
+      "product_id": "DP005",
+      "name": "Inventory Levels Contract",
+      "description": "Data quality contract for inventory data ensuring stock accuracy",
+      "version": "1.0.0",
+      "enforcement_mode": "strict",
+      "effective_from": "2024-03-15T00:00:00Z",
+      "effective_until": null,
+      "is_active": true,
+      "created_at": "2024-03-15T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "created_by": "data-steward@company.com",
+      "approved_by": "governance@company.com",
+      "rules": [
+        {
+          "id": "rule_dp005_01",
+          "name": "inventory_id_unique",
+          "description": "Inventory ID must be unique",
+          "type": "uniqueness",
+          "field": "inventory_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp005_02",
+          "name": "product_ref_valid",
+          "description": "Product ID must exist in product catalog",
+          "type": "referential",
+          "field": "product_id",
+          "reference_product": "DP006",
+          "reference_field": "product_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp005_03",
+          "name": "quantity_non_negative",
+          "description": "Quantity must be non-negative",
+          "type": "range",
+          "field": "quantity",
+          "min_value": 0,
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp005_04",
+          "name": "freshness_check",
+          "description": "Data should be no older than 5 minutes",
+          "type": "freshness",
+          "max_age_seconds": 300,
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp005_05",
+          "name": "reserved_less_than_total",
+          "description": "Reserved quantity should not exceed total quantity",
+          "type": "custom",
+          "custom_expression": "reserved_quantity <= quantity",
+          "severity": "error",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "contract_dp006",
+      "product_id": "DP006",
+      "name": "Product Catalog Contract",
+      "description": "Data quality contract for product master data",
+      "version": "1.0.0",
+      "enforcement_mode": "warn",
+      "effective_from": "2024-01-20T00:00:00Z",
+      "effective_until": null,
+      "is_active": true,
+      "created_at": "2024-01-20T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z",
+      "created_by": "data-steward@company.com",
+      "approved_by": "governance@company.com",
+      "rules": [
+        {
+          "id": "rule_dp006_01",
+          "name": "product_id_unique",
+          "description": "Product ID must be unique",
+          "type": "uniqueness",
+          "field": "product_id",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp006_02",
+          "name": "sku_unique",
+          "description": "SKU must be unique",
+          "type": "uniqueness",
+          "field": "sku",
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp006_03",
+          "name": "name_not_null",
+          "description": "Product name cannot be null",
+          "type": "null_rate",
+          "field": "name",
+          "threshold": 0.0,
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp006_04",
+          "name": "price_positive",
+          "description": "Price must be positive",
+          "type": "range",
+          "field": "price",
+          "min_value": 0.01,
+          "severity": "error",
+          "enabled": true
+        },
+        {
+          "id": "rule_dp006_05",
+          "name": "description_null_rate",
+          "description": "Description should be populated for at least 90% of products",
+          "type": "null_rate",
+          "field": "description",
+          "threshold": 0.10,
+          "severity": "warning",
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}
