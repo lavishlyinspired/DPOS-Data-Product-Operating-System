@@ -1,5 +1,6 @@
 import yaml
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,12 +22,45 @@ class Config:
     
     @property
     def neo4j_auth(self): 
-        return (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "password"))
+        # Support both legacy and current env var names.
+        username = os.getenv("NEO4J_USER") or os.getenv("NEO4J_USERNAME") or "neo4j"
+        return (username, os.getenv("NEO4J_PASSWORD", "password"))
 
     @property
     def data_dir(self): 
-        # The missing property causing your error
-        return self.config.get('paths', {}).get('data_dir', './data')
+        """Base directory for governance definitions (products/contracts/etc).
+
+        Backward compatible:
+        - Old layout:   ./data/<category>/...
+        - New layout:   ./data/governance/<category>/...
+        """
+
+        configured = self.config.get('paths', {}).get('data_dir')
+        if configured:
+            return configured
+
+        project_root = Path(__file__).resolve().parents[1]
+        new_layout = project_root / "data" / "governance"
+        if new_layout.exists():
+            return str(new_layout)
+
+        return str(project_root / "data")
+
+    @property
+    def usecase_dir(self) -> str:
+        """Base directory for use-case datasets (CSV/etc)."""
+
+        configured = self.config.get('paths', {}).get('usecase_dir')
+        if configured:
+            return configured
+
+        project_root = Path(__file__).resolve().parents[1]
+        new_layout = project_root / "data" / "usecase"
+        if new_layout.exists():
+            return str(new_layout)
+
+        # Fallback: historically sample CSVs lived directly under ./data.
+        return str(project_root / "data")
     
     @property
     def kafka_servers(self): 

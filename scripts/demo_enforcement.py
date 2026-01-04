@@ -15,7 +15,15 @@ def main():
     
     # Load Bad Data
     data = []
-    with open(f"{cfg.data_dir}/bad/customers_bad.csv", 'r') as f:
+    usecase = os.getenv("DPOS_USECASE", "ecommerce")
+    usecase_root = os.path.join(cfg.usecase_dir, usecase)
+    bad_path = os.path.join(usecase_root, "bad", "customers_bad.csv")
+    if not os.path.exists(bad_path):
+        bad_path = os.path.join(usecase_root, "bad", "outreach_list_bad.csv")
+    if not os.path.exists(bad_path):
+        bad_path = f"{cfg.data_dir}/bad/customers_bad.csv"
+
+    with open(bad_path, 'r') as f:
         reader = csv.DictReader(f)
         data = list(reader)
         

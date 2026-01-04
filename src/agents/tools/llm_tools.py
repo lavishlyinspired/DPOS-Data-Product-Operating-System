@@ -409,7 +409,7 @@ def create_remediation_plan(
     root_cause: str,
     severity: str,
     affected_systems: List[str],
-    available_resources: List[str] = None
+    available_resources: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Create a detailed remediation plan using LLM reasoning.

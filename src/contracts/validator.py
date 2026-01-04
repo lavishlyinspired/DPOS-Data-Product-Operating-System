@@ -109,13 +109,32 @@ class ContractValidator:
 
         self._save_report(report)
 
+        # Attach output port info (if present) so enforcement/demos can route outputs.
+        output_port = {}
+        try:
+            port_res = self.manager.execute_query(
+                """
+                MATCH (p:DataProduct {id: $id})-[:HAS_OUTPUT_PORT]->(op:OutputPort)
+                WHERE coalesce(op.status, 'active') = 'active'
+                RETURN op
+                ORDER BY coalesce(op.requires_approval, false) DESC
+                LIMIT 1
+                """,
+                {"id": self.product_id},
+            )
+            if port_res:
+                output_port = dict(port_res[0].get("op", {}))
+        except Exception:
+            output_port = {}
+
         return {
             "report_id": report_id,
             "product_id": self.product_id,
             "result": result,
             "action": action,
             "valid_data": valid_data,
-            "invalid_data": invalid_data
+            "invalid_data": invalid_data,
+            "output_port": output_port
         }
 
     # ---------------------------------------------------------

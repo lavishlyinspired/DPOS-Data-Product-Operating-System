@@ -3,11 +3,12 @@ Insights Agent (LLM-Enhanced)
 Generates automated governance insights, trends, and recommendations.
 Uses LLM for intelligent pattern detection and executive summaries.
 """
-from typing import TypedDict, List, Optional, Annotated, Literal
+from typing import TypedDict, List, Optional, Annotated, Literal, Any
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage
 from operator import add
 from datetime import datetime, timedelta
+import json
 
 from src.agents.checkpointer import get_checkpointer
 from src.agents.utils.logger import get_agent_logger
@@ -62,7 +63,7 @@ def _fetch_products_data() -> List[dict]:
                p.created_at as created_at
         """
         results = mgr.execute_query(query, {})
-        return [dict(r) for r in results]
+        return [_jsonable_row(dict(r)) for r in results]
 
 
 def _fetch_incidents_data(days: int = 30) -> List[dict]:
@@ -73,13 +74,13 @@ def _fetch_incidents_data(days: int = 30) -> List[dict]:
         OPTIONAL MATCH (i)<-[:HAS_INCIDENT]-(p:DataProduct)
         RETURN i.id as id, i.type as type, i.severity as severity,
                i.status as status, i.description as description,
-               i.created_at as created_at, i.resolved_at as resolved_at,
+             i.created_at as created_at,
                p.id as product_id, p.name as product_name
         ORDER BY i.created_at DESC
         LIMIT 500
         """
         results = mgr.execute_query(query, {})
-        return [dict(r) for r in results]
+        return [_jsonable_row(dict(r)) for r in results]
 
 
 def _fetch_contracts_data() -> List[dict]:
@@ -96,7 +97,7 @@ def _fetch_contracts_data() -> List[dict]:
                rule_count
         """
         results = mgr.execute_query(query, {})
-        return [dict(r) for r in results]
+        return [_jsonable_row(dict(r)) for r in results]
 
 
 def _fetch_metrics_data() -> List[dict]:
@@ -104,7 +105,7 @@ def _fetch_metrics_data() -> List[dict]:
     with Neo4jManager() as mgr:
         query = """
         MATCH (v:ValidationReport)
-        OPTIONAL MATCH (v)-[:VALIDATED]->(p:DataProduct)
+        OPTIONAL MATCH (p:DataProduct)-[:HAS_VALIDATION]->(v)
         RETURN v.id as id, v.result as result, v.action as action,
                v.total_records as total_records, v.violations as violations,
                v.created_at as created_at,
@@ -113,7 +114,93 @@ def _fetch_metrics_data() -> List[dict]:
         LIMIT 200
         """
         results = mgr.execute_query(query, {})
-        return [dict(r) for r in results]
+        return [_jsonable_row(dict(r)) for r in results]
+
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return default
+        try:
+            return int(s)
+        except ValueError:
+            try:
+                return int(float(s))
+            except ValueError:
+                return default
+    return default
+
+
+def _make_jsonable(value: Any) -> Any:
+    """Convert Neo4j / datetime-ish values into msgpack-safe primitives."""
+    if value is None:
+        return None
+    if isinstance(value, (bool, int, float, str)):
+        return value
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {k: _make_jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_make_jsonable(v) for v in value]
+
+    # Neo4j temporal types often provide to_native(); fall back to string
+    to_native = getattr(value, "to_native", None)
+    if callable(to_native):
+        try:
+            return _make_jsonable(to_native())
+        except Exception:
+            pass
+
+    return str(value)
+
+
+def _jsonable_row(row: dict) -> dict:
+    return {k: _make_jsonable(v) for k, v in row.items()}
+
+
+def _violation_count(raw: Any) -> int:
+    """`ValidationReport.violations` is stored as a JSON string; count items robustly."""
+    if raw is None:
+        return 0
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, list):
+        return len(raw)
+    if isinstance(raw, dict):
+        return 1
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return 0
+        # numeric string
+        try:
+            return int(s)
+        except ValueError:
+            pass
+        # json string
+        try:
+            parsed = json.loads(s)
+        except Exception:
+            return 0
+        if isinstance(parsed, list):
+            return len(parsed)
+        if isinstance(parsed, dict):
+            # Could be a single violation object
+            return 1
+        if isinstance(parsed, (int, float)):
+            return int(parsed)
+        return 0
+    return 0
 
 
 def _generate_llm_insights(
@@ -372,8 +459,8 @@ def build_insights_agent():
                 product_quality[pid]["passed"] += 1
             else:
                 product_quality[pid]["failed"] += 1
-            product_quality[pid]["total_records"] += m.get("total_records", 0)
-            product_quality[pid]["violations"] += m.get("violations", 0)
+            product_quality[pid]["total_records"] += _safe_int(m.get("total_records", 0))
+            product_quality[pid]["violations"] += _violation_count(m.get("violations"))
 
         # Calculate quality scores
         quality_patterns = []
@@ -417,7 +504,7 @@ def build_insights_agent():
         products_without_contracts = all_product_ids - products_with_contracts
 
         active_contracts = sum(1 for c in contracts if c.get("is_active", True))
-        total_rules = sum(c.get("rule_count", 0) for c in contracts)
+        total_rules = sum(_safe_int(c.get("rule_count", 0)) for c in contracts)
 
         compliance_insights = {
             "total_products": len(products),

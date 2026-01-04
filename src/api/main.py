@@ -43,8 +43,11 @@ async def lifespan(app: FastAPI):
     try:
         from src.graph.manager import Neo4jManager
         with Neo4jManager() as mgr:
-            mgr.init_schema()
-        logger.info("Database schema initialized")
+            if mgr.verify_connectivity():
+                mgr.init_schema()
+                logger.info("Database schema initialized")
+            else:
+                logger.warning("Neo4j not reachable; skipping schema initialization")
     except Exception as e:
         logger.warning(f"Could not initialize schema: {e}")
 

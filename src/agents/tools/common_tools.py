@@ -2,7 +2,7 @@
 Common Tools for DPOS Agents
 Shared tool implementations used across multiple agents.
 """
-from typing import List
+from typing import List, Optional
 from langchain_core.tools import tool
 from datetime import datetime, UTC
 import uuid
@@ -164,7 +164,7 @@ def record_agent_execution(incident_id: str, agent_name: str, outcome: str) -> d
 
 
 @tool
-def update_incident_status(incident_id: str, status: str, resolution: str = None) -> dict:
+def update_incident_status(incident_id: str, status: str, resolution: Optional[str] = None) -> dict:
     """Update incident status in Neo4j."""
     with Neo4jManager() as mgr:
         q = """

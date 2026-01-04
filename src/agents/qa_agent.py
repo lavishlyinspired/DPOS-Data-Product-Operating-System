@@ -8,6 +8,7 @@ from langgraph.graph import StateGraph, END
 from src.agents.tools.common_tools import search_products, get_contract_rules
 from src.agents.checkpointer import get_checkpointer
 from src.agents.utils.logger import get_agent_logger
+from src.core.llm import get_llm_if_available
 
 
 class QAAgentState(TypedDict):
@@ -55,6 +56,84 @@ def build_qa_agent():
         log.info("Generating answer")
 
         context = state.get("context", [])
+
+        llm = get_llm_if_available()
+        if llm and context:
+            try:
+                # Compact context for prompt.
+                ctx_lines: List[str] = []
+                for item in context[:12]:
+                    if "description" in item:
+                        name = item.get("name", item.get("id", "Unknown"))
+                        desc = (item.get("description") or "").strip().replace("\n", " ")
+                        status = item.get("status")
+                        pid = item.get("id")
+                        parts = [name]
+                        if pid:
+                            parts.append(f"id={pid}")
+                        if status:
+                            parts.append(f"status={status}")
+                        line = "- " + " | ".join(parts)
+                        if desc:
+                            line += f" :: {desc[:240]}"
+                        ctx_lines.append(line)
+                    else:
+                        # Likely a contract rule shape
+                        rname = item.get("name", "Rule")
+                        rtype = item.get("type", "")
+                        field = item.get("field", "")
+                        rule_parts = [rname]
+                        if rtype:
+                            rule_parts.append(f"type={rtype}")
+                        if field:
+                            rule_parts.append(f"field={field}")
+                        ctx_lines.append("- " + " | ".join(rule_parts))
+
+                prompt = (
+                    "You are a data product governance assistant.\n"
+                    "Answer the user's question using ONLY the provided context.\n"
+                    "Also provide a short next-step checklist (3-6 bullets).\n\n"
+                    f"QUESTION: {state.get('question', '')}\n\n"
+                    "CONTEXT:\n"
+                    + "\n".join(ctx_lines)
+                    + "\n\n"
+                    "Return plain text ONLY in this format:\n"
+                    "ANSWER: <text>\n"
+                    "NEXT_STEPS:\n"
+                    "- <bullet>\n"
+                )
+
+                resp = llm.invoke(prompt)
+                content = resp.content.strip() if hasattr(resp, "content") else str(resp).strip()
+
+                answer_text = ""
+                steps: List[str] = []
+                in_steps = False
+                for line in content.splitlines():
+                    line = line.strip()
+                    if line.startswith("ANSWER:"):
+                        answer_text = line.replace("ANSWER:", "", 1).strip()
+                        in_steps = False
+                        continue
+                    if line.startswith("NEXT_STEPS:"):
+                        in_steps = True
+                        continue
+                    if in_steps and line.startswith("-"):
+                        steps.append(line.lstrip("-").strip())
+
+                if not answer_text:
+                    # If parsing failed, keep full content but still return.
+                    answer_text = content
+
+                if steps:
+                    answer_text = answer_text.rstrip() + "\n\nNext steps:\n" + "\n".join(f"- {s}" for s in steps[:6])
+
+                return {
+                    **state,
+                    "answer": answer_text,
+                }
+            except Exception as e:
+                log.warning(f"LLM answer synthesis failed: {e}")
 
         if not context:
             answer = "I couldn't find relevant information to answer your question. Please try rephrasing or be more specific about the data product you're interested in."

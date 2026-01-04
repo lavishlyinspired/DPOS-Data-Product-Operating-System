@@ -20,7 +20,7 @@ class IncidentManager:
 
         incident = Incident(
             id=incident_id,
-            product_id=product_id,
+            target_id=product_id,
             incident_type=incident_type,
             severity=severity,
             description=description,

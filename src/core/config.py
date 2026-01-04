@@ -3,14 +3,29 @@ DPOS Configuration Management
 Centralized configuration with environment-specific settings and validation.
 """
 from typing import Optional, List
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, field_validator
 from functools import lru_cache
 import os
+from pathlib import Path
 
 
 class Settings(BaseSettings):
     """Application settings with validation."""
+
+    model_config = SettingsConfigDict(
+        # config.py lives at: <repo>/dpos-ecommerce/src/core/config.py
+        # parents[2] => <repo>/dpos-ecommerce
+        # parents[3] => <repo>
+        env_file=(
+            str(Path(__file__).resolve().parents[2] / ".env"),
+            str(Path(__file__).resolve().parents[3] / ".env"),
+            ".env",
+        ),
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
     # Environment
     environment: str = Field(default="development", description="Environment name")
@@ -102,10 +117,8 @@ class Settings(BaseSettings):
         """Get max upload size in bytes."""
         return self.max_upload_size_mb * 1024 * 1024
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    # NOTE: `class Config` kept in older versions; `model_config` above is the
+    # pydantic-settings v2 canonical configuration.
 
 
 @lru_cache()

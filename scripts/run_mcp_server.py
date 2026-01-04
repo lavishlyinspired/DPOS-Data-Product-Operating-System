@@ -10,7 +10,7 @@ import os
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from src.mcp.server import run_stdio_server
+from mcp.server import run_stdio_server
 
 
 if __name__ == "__main__":

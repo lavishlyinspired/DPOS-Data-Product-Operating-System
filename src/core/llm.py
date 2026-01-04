@@ -10,6 +10,7 @@ from enum import Enum
 import hashlib
 import json
 import time
+import contextvars
 from datetime import datetime, UTC
 
 from src.core.config import settings
@@ -19,6 +20,72 @@ from src.core.resilience import CircuitBreaker, CircuitBreakerConfig, retry
 logger = get_logger(__name__)
 
 T = TypeVar('T')
+
+
+# ---------------------------------------------------------------------------
+# LLM tracing (for surfacing in MCP tool responses)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class LLMTraceSnapshot:
+    call_count: int
+    last_success: Optional[Dict[str, Any]]
+    available: bool
+    available_providers: List[str]
+
+
+_llm_trace_state: contextvars.ContextVar[Dict[str, Any]] = contextvars.ContextVar(
+    "dpos_llm_trace_state",
+    default={"call_count": 0, "last_success": None},
+)
+
+
+def _llm_trace_note_success(response: "LLMResponse") -> None:
+    state = dict(_llm_trace_state.get() or {})
+    state["call_count"] = int(state.get("call_count", 0)) + 1
+    state["last_success"] = {
+        "provider": response.provider.value if isinstance(response.provider, LLMProvider) else str(response.provider),
+        "model": response.model,
+        "cached": bool(response.cached),
+        "latency_ms": response.latency_ms,
+        "tokens_used": response.tokens_used,
+    }
+    _llm_trace_state.set(state)
+
+
+def llm_trace_snapshot() -> LLMTraceSnapshot:
+    """Snapshot LLM availability + per-request call counters.
+
+    Intended for MCP tool wrappers: snapshot before/after a tool runs.
+    """
+    try:
+        llm = get_llm_if_available()
+        available = llm is not None
+        available_providers = llm.available_providers if llm is not None else []
+    except Exception:
+        available = False
+        available_providers = []
+
+    state = _llm_trace_state.get() or {}
+    return LLMTraceSnapshot(
+        call_count=int(state.get("call_count", 0)),
+        last_success=state.get("last_success"),
+        available=available,
+        available_providers=[str(p) for p in available_providers],
+    )
+
+
+def llm_trace_build_meta(before: LLMTraceSnapshot, after: LLMTraceSnapshot) -> Dict[str, Any]:
+    used = after.call_count > before.call_count
+    meta: Dict[str, Any] = {
+        "available": bool(after.available),
+        "available_providers": after.available_providers,
+        "used": bool(used),
+    }
+    if used:
+        meta["last_success"] = after.last_success
+    return meta
 
 
 class LLMProvider(Enum):
@@ -359,6 +426,7 @@ class UnifiedLLM:
             )
             if cached:
                 logger.debug("Returning cached LLM response")
+                _llm_trace_note_success(cached)
                 return cached
 
         # Try providers in order
@@ -379,6 +447,7 @@ class UnifiedLLM:
                         "cached": response.cached
                     }
                 )
+                _llm_trace_note_success(response)
                 return response
 
             except Exception as e:

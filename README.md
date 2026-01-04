@@ -197,8 +197,7 @@ cd frontend && npm run lint
 
 ## Documentation
 
-- [Complete Technical Document](docs/DPOS_COMPLETE_TECHNICAL_DOCUMENTATION.md)
-- [Complete Implemetation Grounded Walkthough](docs/DPOS_walkthrough.md)
+- [Complete Implementation](docs/DPOS_COMPLETE_DOCUMENTATION.md)
 
 ## License
 

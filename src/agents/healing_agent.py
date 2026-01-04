@@ -107,15 +107,15 @@ def build_healing_agent():
         has_fallback = fallback_info.get("has_fallback", False)
 
         # LLM-powered root cause analysis
-        root_cause_result = analyze_root_cause.invoke(
-            incident_id=state["incident_id"],
-            incident_type="data_quality_issue",
-            description=state.get("diagnosis", "Unknown issue"),
-            affected_product=state.get("product_name", state.get("product_id", "unknown")),
-            severity=state.get("severity", "medium"),
-            violation_details="",
-            historical_incidents=[]
-        )
+        root_cause_result = analyze_root_cause.invoke({
+            "incident_id": state["incident_id"],
+            "incident_type": "data_quality_issue",
+            "description": state.get("diagnosis", "Unknown issue"),
+            "affected_product": state.get("product_name", state.get("product_id", "unknown")),
+            "severity": state.get("severity", "medium"),
+            "violation_details": "",
+            "historical_incidents": [],
+        })
 
         log.info(
             f"Root cause analysis complete",
@@ -153,14 +153,14 @@ def build_healing_agent():
         affected_users = impact.get("affected_users", 0)
 
         # LLM severity reassessment
-        severity_result = reassess_severity.invoke(
-            incident_id=state["incident_id"],
-            current_severity=state.get("severity", "medium"),
-            downstream_count=downstream_count,
-            affected_users=affected_users,
-            has_fallback=state.get("fallback_available", False),
-            business_context=""
-        )
+        severity_result = reassess_severity.invoke({
+            "incident_id": state["incident_id"],
+            "current_severity": state.get("severity", "medium"),
+            "downstream_count": downstream_count,
+            "affected_users": affected_users,
+            "has_fallback": state.get("fallback_available", False),
+            "business_context": "",
+        })
 
         assessed = severity_result.get("assessed_severity", state.get("severity", "medium"))
         changed = severity_result.get("changed", False)
@@ -203,31 +203,31 @@ def build_healing_agent():
         log.info("Escalating to human for approval")
 
         # Generate remediation plan using LLM
-        remediation = create_remediation_plan.invoke(
-            incident_type="data_quality_issue",
-            root_cause=state.get("root_cause", "Unknown"),
-            severity=state.get("assessed_severity") or state.get("severity", "critical"),
-            affected_systems=[state.get("product_name", state.get("product_id", "unknown"))],
-            available_resources=None
-        )
+        remediation = create_remediation_plan.invoke({
+            "incident_type": "data_quality_issue",
+            "root_cause": state.get("root_cause", "Unknown"),
+            "severity": state.get("assessed_severity") or state.get("severity", "critical"),
+            "affected_systems": [state.get("product_name", state.get("product_id", "unknown"))],
+            "available_resources": None,
+        })
 
         # Generate stakeholder narrative
-        narrative_result = generate_incident_narrative.invoke(
-            incident={
+        narrative_result = generate_incident_narrative.invoke({
+            "incident": {
                 "id": state["incident_id"],
                 "type": "data_quality_issue",
                 "severity": state.get("assessed_severity") or state.get("severity"),
                 "product_name": state.get("product_name"),
                 "description": state.get("diagnosis"),
-                "status": "escalated"
+                "status": "escalated",
             },
-            impact_analysis={
+            "impact_analysis": {
                 "downstream_count": len(state.get("root_cause_factors", [])),
                 "affected_users": 0,
-                "risk_score": "high" if state.get("assessed_severity") == "critical" else "medium"
+                "risk_score": "high" if state.get("assessed_severity") == "critical" else "medium",
             },
-            actions_taken=["Incident detected", "Root cause analyzed", "Escalated to human review"]
-        )
+            "actions_taken": ["Incident detected", "Root cause analyzed", "Escalated to human review"],
+        })
 
         return {
             **state,
@@ -253,13 +253,13 @@ def build_healing_agent():
                 fallback_activated = True
 
         # Generate remediation steps for documentation
-        remediation = create_remediation_plan.invoke(
-            incident_type="data_quality_issue",
-            root_cause=state.get("root_cause", "Unknown"),
-            severity=state.get("assessed_severity") or state.get("severity", "high"),
-            affected_systems=[state.get("product_name", state.get("product_id", "unknown"))],
-            available_resources=["fallback_pipeline"]
-        )
+        remediation = create_remediation_plan.invoke({
+            "incident_type": "data_quality_issue",
+            "root_cause": state.get("root_cause", "Unknown"),
+            "severity": state.get("assessed_severity") or state.get("severity", "high"),
+            "affected_systems": [state.get("product_name", state.get("product_id", "unknown"))],
+            "available_resources": ["fallback_pipeline"],
+        })
 
         recommendation = "Fallback source activated automatically. "
         recommendation += f"Root cause: {state.get('root_cause', 'Unknown')}. "
@@ -304,15 +304,19 @@ def build_healing_agent():
                 "recommendation": state.get("recommendation", "")[:500]
             }
 
-            record_agent_execution.invoke(
-                state["incident_id"],
-                "HealingAgent",
-                str(outcome)
-            )
+            record_agent_execution.invoke({
+                "incident_id": state["incident_id"],
+                "agent_name": "HealingAgent",
+                "outcome": str(outcome),
+            })
 
             # Update incident status
             new_status = "mitigating" if state.get("action") != "escalate_to_human" else "escalated"
-            update_incident_status.invoke(state["incident_id"], new_status)
+            update_incident_status.invoke({
+                "incident_id": state["incident_id"],
+                "status": new_status,
+                "resolution": None,
+            })
 
         return {
             **state,

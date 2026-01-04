@@ -8,8 +8,10 @@ from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage
 from operator import add
 from datetime import datetime, timedelta
+import uuid
 
 from src.agents.checkpointer import get_checkpointer
+from src.agents.checkpointer import get_thread_config
 from src.agents.utils.logger import get_agent_logger
 from src.core.llm import get_llm_if_available
 from src.graph.manager import Neo4jManager
@@ -533,9 +535,14 @@ Provide 2-3 sentences about the overall SLA health trend and any patterns observ
 
 
 # Convenience function to run the agent
-def run_sla_monitoring(product_ids: Optional[List[str]] = None) -> dict:
+def run_sla_monitoring(product_ids: Optional[List[str]] = None, thread_id: Optional[str] = None) -> dict:
     """Run SLA monitoring for specified products or all products."""
     agent = build_sla_agent()
+
+    if thread_id is None:
+        thread_id = f"sla_{uuid.uuid4().hex[:8]}"
+
+    config = get_thread_config(thread_id)
 
     initial_state: SLAAgentState = {
         "product_ids": product_ids,
@@ -554,7 +561,7 @@ def run_sla_monitoring(product_ids: Optional[List[str]] = None) -> dict:
         "messages": []
     }
 
-    result = agent.invoke(initial_state)
+    result = agent.invoke(initial_state, config)
 
     return {
         "status": result.get("status"),

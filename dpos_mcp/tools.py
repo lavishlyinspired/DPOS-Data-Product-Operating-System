@@ -3,6 +3,8 @@ MCP Tools for DPOS
 Defines all tools available via MCP for Claude and other clients.
 Includes all agents, knowledge extraction, and governance tools.
 """
+import sys
+from contextlib import redirect_stdout, redirect_stderr
 from typing import List, Dict, Any, Optional
 from langchain_core.tools import tool, StructuredTool
 from pydantic import BaseModel, Field
@@ -101,6 +103,15 @@ class OrchestratorInput(BaseModel):
     incident_ids: List[str] = Field(description="Incident IDs to orchestrate")
 
 
+class SupervisorQueryInput(BaseModel):
+    """Input for supervisor agent query."""
+    query: str = Field(description="Natural language request for the Supervisor Agent")
+    conversation_history: Optional[List[Dict[str, Any]]] = Field(
+        default=None,
+        description="Optional conversation history objects for continuity",
+    )
+
+
 # ============================================================================
 # HELPER FUNCTIONS - Lazy imports to avoid circular dependencies
 # ============================================================================
@@ -123,11 +134,99 @@ def _get_agent_runner():
     }
 
 
+def _run_supervisor_agent(query: str, conversation_history: Optional[List[Dict[str, Any]]] = None) -> Dict:
+    """Run the Supervisor Agent (global orchestrator)."""
+    try:
+        import uuid
+        from src.agents.supervisor_agent import build_supervisor_agent
+        from src.agents.checkpointer import get_thread_config
+
+        with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+            agent = build_supervisor_agent()
+            thread_id = f"supervisor_{uuid.uuid4().hex[:8]}"
+            result = agent.invoke(
+                {
+                    "query": query,
+                    "conversation_history": conversation_history or [],
+                    "intent": None,
+                    "intent_confidence": None,
+                    "execution_plan": [],
+                    "current_step": 0,
+                    "agent_results": {},
+                    "intermediate_findings": [],
+                    "requires_human_approval": False,
+                    "approval_reason": None,
+                    "approved": False,
+                    "response": None,
+                    "recommendations": [],
+                    "follow_up_questions": [],
+                    "execution_log": [],
+                    "total_agents_invoked": 0,
+                    "status": "new",
+                    "messages": [],
+                },
+                config=get_thread_config(thread_id),
+            )
+
+        agent_results = result.get("agent_results") or {}
+        execution_log = result.get("execution_log") or []
+
+        return {
+            "status": result.get("status"),
+            "intent": result.get("intent"),
+            "intent_confidence": result.get("intent_confidence"),
+            "total_agents_invoked": result.get("total_agents_invoked"),
+            "requires_human_approval": result.get("requires_human_approval"),
+            "approval_reason": result.get("approval_reason"),
+            "response": result.get("response"),
+            "recommendations": result.get("recommendations", []),
+            "follow_up_questions": result.get("follow_up_questions", []),
+            "execution_plan": result.get("execution_plan", []),
+            # Trace helpers for Claude Desktop: lightweight + safe-to-serialize
+            "agents_invoked": sorted([str(k) for k in agent_results.keys()]),
+            "execution_log_tail": [str(x) for x in execution_log][-50:],
+        }
+    except Exception as e:
+        return {"error": str(e), "status": "failed"}
+
+
+@tool
+def dpos_supervisor_query(query: str, conversation_history: Optional[List[Dict[str, Any]]] = None) -> Dict:
+    """
+    Query the DPOS Supervisor Agent (global orchestrator).
+    The supervisor selects and coordinates other agents, then synthesizes a final response.
+
+    Args:
+        query: Natural language query
+        conversation_history: Optional prior turns for context
+
+    Returns:
+        Supervisor response, execution plan, and recommendations
+    """
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        from src.core.llm import llm_trace_snapshot, llm_trace_build_meta
+
+        before = llm_trace_snapshot()
+        result = _run_supervisor_agent(query=query, conversation_history=conversation_history)
+        after = llm_trace_snapshot()
+
+        return {
+            "_meta": {
+                "mcp_tool": "dpos_supervisor_query",
+                "agent": "SupervisorAgent",
+                "trace_fields": ["agents_invoked", "execution_plan", "execution_log_tail"],
+                "llm": llm_trace_build_meta(before, after),
+            },
+            **result,
+        }
+
+
 def _run_sla_agent(product_ids: Optional[List[str]] = None) -> Dict:
     """Run SLA monitoring agent."""
     try:
         from src.agents.sla_agent import run_sla_monitoring
-        return run_sla_monitoring(product_ids)
+        with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+            return run_sla_monitoring(product_ids)
     except Exception as e:
         return {"error": str(e), "status": "failed"}
 
@@ -136,7 +235,8 @@ def _run_insights_agent(time_range_days: int = 30) -> Dict:
     """Run insights agent."""
     try:
         from src.agents.insights_agent import run_insights_analysis
-        return run_insights_analysis(time_range_days)
+        with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+            return run_insights_analysis(time_range_days)
     except Exception as e:
         return {"error": str(e), "status": "failed"}
 
@@ -145,14 +245,15 @@ def _run_cross_domain_agent(event_type: str, product_id: str, severity: str, des
     """Run cross-domain impact agent."""
     try:
         from src.agents.cross_domain_agent import build_cross_domain_agent
-        agent = build_cross_domain_agent()
-        result = agent.invoke({
-            "event_type": event_type,
-            "affected_product_id": product_id,
-            "severity": severity,
-            "description": description,
-            "messages": []
-        })
+        with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+            agent = build_cross_domain_agent()
+            result = agent.invoke({
+                "event_type": event_type,
+                "affected_product_id": product_id,
+                "severity": severity,
+                "description": description,
+                "messages": []
+            })
         return {
             "status": result.get("status"),
             "affected_domains": result.get("affected_domains"),
@@ -168,15 +269,16 @@ def _run_notification_agent(event_type: str, severity: str, product_id: str, des
     """Run notification agent."""
     try:
         from src.agents.notification_agent import build_notification_agent
-        agent = build_notification_agent()
-        result = agent.invoke({
-            "event_type": event_type,
-            "severity": severity,
-            "affected_product_id": product_id,
-            "summary": description,
-            "details": description,
-            "messages": []
-        })
+        with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+            agent = build_notification_agent()
+            result = agent.invoke({
+                "event_type": event_type,
+                "severity": severity,
+                "affected_product_id": product_id,
+                "summary": description,
+                "details": description,
+                "messages": []
+            })
         return {
             "status": result.get("status"),
             "notifications": result.get("notifications", []),
@@ -190,11 +292,12 @@ def _run_contract_evolution_agent(contract_id: str) -> Dict:
     """Run contract evolution agent."""
     try:
         from src.agents.contract_evolution_agent import build_contract_evolution_agent
-        agent = build_contract_evolution_agent()
-        result = agent.invoke({
-            "contract_id": contract_id,
-            "messages": []
-        })
+        with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+            agent = build_contract_evolution_agent()
+            result = agent.invoke({
+                "contract_id": contract_id,
+                "messages": []
+            })
         return {
             "status": result.get("status"),
             "violation_analysis": result.get("violation_analysis"),
@@ -210,11 +313,12 @@ def _run_predictive_agent(product_ids: List[str]) -> Dict:
     """Run predictive agent."""
     try:
         from src.agents.predictive_agent import build_predictive_agent
-        agent = build_predictive_agent()
-        result = agent.invoke({
-            "product_ids": product_ids,
-            "messages": []
-        })
+        with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+            agent = build_predictive_agent()
+            result = agent.invoke({
+                "product_ids": product_ids,
+                "messages": []
+            })
         return {
             "status": result.get("status"),
             "predictions": result.get("predictions"),
@@ -229,11 +333,12 @@ def _run_orchestrator_agent(incident_ids: List[str]) -> Dict:
     """Run orchestrator agent."""
     try:
         from src.agents.orchestrator_agent import build_orchestrator_agent
-        agent = build_orchestrator_agent()
-        result = agent.invoke({
-            "incident_ids": incident_ids,
-            "messages": []
-        })
+        with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+            agent = build_orchestrator_agent()
+            result = agent.invoke({
+                "incident_ids": incident_ids,
+                "messages": []
+            })
         return {
             "status": result.get("status"),
             "incident_analysis": result.get("incident_analysis"),
@@ -262,7 +367,7 @@ def dpos_search_products(query: str, limit: int = 10) -> List[Dict]:
     Returns:
         List of matching data products
     """
-    with Neo4jManager() as mgr:
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr), Neo4jManager() as mgr:
         cypher = """
         MATCH (p:DataProduct)
         WHERE toLower(p.name) CONTAINS toLower($query)
@@ -288,7 +393,7 @@ def dpos_get_product(product_id: str) -> Dict:
     Returns:
         Product details including health, contracts, and incidents
     """
-    with Neo4jManager() as mgr:
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr), Neo4jManager() as mgr:
         cypher = """
         MATCH (p:DataProduct {id: $id})
         OPTIONAL MATCH (p)-[:IN_DOMAIN]->(d:Domain)
@@ -321,7 +426,7 @@ def dpos_get_lineage(product_id: str, direction: str = "both", depth: int = 3) -
     Returns:
         Lineage information with upstream and downstream products
     """
-    with Neo4jManager() as mgr:
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr), Neo4jManager() as mgr:
         result = {"product_id": product_id, "upstream": [], "downstream": []}
 
         if direction in ["upstream", "both"]:
@@ -357,7 +462,7 @@ def dpos_list_incidents(status: str = "open", severity: str = None) -> List[Dict
     Returns:
         List of incidents matching the criteria
     """
-    with Neo4jManager() as mgr:
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr), Neo4jManager() as mgr:
         conditions = []
         params = {}
 
@@ -394,7 +499,7 @@ def dpos_get_dashboard_stats() -> Dict:
     Returns:
         Summary statistics including products, incidents, and health
     """
-    with Neo4jManager() as mgr:
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr), Neo4jManager() as mgr:
         stats = {}
 
         # Product count
@@ -439,22 +544,23 @@ def dpos_execute_cypher(query: str, parameters: Dict = None) -> Dict:
     Returns:
         Query results
     """
-    # Safety check
-    query_upper = query.upper()
-    forbidden = ['DELETE', 'REMOVE', 'SET ', 'CREATE', 'MERGE', 'DROP']
-    for word in forbidden:
-        if word in query_upper:
-            return {"error": f"Mutation operations ({word}) are not allowed"}
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        # Safety check
+        query_upper = query.upper()
+        forbidden = ['DELETE', 'REMOVE', 'SET ', 'CREATE', 'MERGE', 'DROP']
+        for word in forbidden:
+            if word in query_upper:
+                return {"error": f"Mutation operations ({word}) are not allowed"}
 
-    with Neo4jManager() as mgr:
-        try:
-            results = mgr.execute_query(query, parameters or {})
-            return {
-                "results": [dict(r) for r in results[:100]],
-                "count": len(results)
-            }
-        except Exception as e:
-            return {"error": str(e)}
+        with Neo4jManager() as mgr:
+            try:
+                results = mgr.execute_query(query, parameters or {})
+                return {
+                    "results": [dict(r) for r in results[:100]],
+                    "count": len(results)
+                }
+            except Exception as e:
+                return {"error": str(e)}
 
 
 # ============================================================================
@@ -474,16 +580,26 @@ def dpos_handle_incident(incident_id: str, severity: str = "medium") -> Dict:
     Returns:
         Agent execution result with action taken
     """
-    runner = _get_agent_runner()
-    result = runner["handle_incident"](incident_id, severity)
-    return {
-        "incident_id": incident_id,
-        "action": result.get("action", "unknown"),
-        "recommendation": result.get("recommendation", ""),
-        "root_cause": result.get("root_cause", ""),
-        "status": result.get("status", ""),
-        "requires_approval": result.get("requires_approval", False)
-    }
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        from src.core.llm import llm_trace_snapshot, llm_trace_build_meta
+
+        before = llm_trace_snapshot()
+        runner = _get_agent_runner()
+        result = runner["handle_incident"](incident_id, severity)
+        after = llm_trace_snapshot()
+        return {
+            "_meta": {
+                "mcp_tool": "dpos_handle_incident",
+                "agent": "HealingAgent",
+                "llm": llm_trace_build_meta(before, after),
+            },
+            "incident_id": incident_id,
+            "action": result.get("action", "unknown"),
+            "recommendation": result.get("recommendation", ""),
+            "root_cause": result.get("root_cause", ""),
+            "status": result.get("status", ""),
+            "requires_approval": result.get("requires_approval", False)
+        }
 
 
 @tool
@@ -499,15 +615,25 @@ def dpos_steward_review(incident_id: str, severity: str = "medium") -> Dict:
     Returns:
         Steward recommendations and governance insights
     """
-    runner = _get_agent_runner()
-    result = runner["handle_incident_steward"](incident_id, severity)
-    return {
-        "incident_id": incident_id,
-        "governance_recommendations": result.get("governance_recommendations", []),
-        "preventive_measures": result.get("preventive_measures", []),
-        "policy_updates": result.get("policy_updates", []),
-        "status": result.get("status", "")
-    }
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        from src.core.llm import llm_trace_snapshot, llm_trace_build_meta
+
+        before = llm_trace_snapshot()
+        runner = _get_agent_runner()
+        result = runner["handle_incident_steward"](incident_id, severity)
+        after = llm_trace_snapshot()
+        return {
+            "_meta": {
+                "mcp_tool": "dpos_steward_review",
+                "agent": "StewardAgent",
+                "llm": llm_trace_build_meta(before, after),
+            },
+            "incident_id": incident_id,
+            "governance_recommendations": result.get("governance_recommendations", []),
+            "preventive_measures": result.get("preventive_measures", []),
+            "policy_updates": result.get("policy_updates", []),
+            "status": result.get("status", "")
+        }
 
 
 @tool
@@ -522,17 +648,27 @@ def dpos_analyze_impact(product_id: str) -> Dict:
     Returns:
         Impact analysis with risk score and affected systems
     """
-    runner = _get_agent_runner()
-    result = runner["analyze_impact"](product_id)
-    return {
-        "product_id": product_id,
-        "risk_score": result.get("risk_score", 0),
-        "business_impact": result.get("business_impact", "unknown"),
-        "downstream_products": len(result.get("downstream_products", [])),
-        "affected_pipelines": len(result.get("affected_pipelines", [])),
-        "affected_users": result.get("affected_users", 0),
-        "mitigation_suggestions": result.get("mitigation_suggestions", [])
-    }
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        from src.core.llm import llm_trace_snapshot, llm_trace_build_meta
+
+        before = llm_trace_snapshot()
+        runner = _get_agent_runner()
+        result = runner["analyze_impact"](product_id)
+        after = llm_trace_snapshot()
+        return {
+            "_meta": {
+                "mcp_tool": "dpos_analyze_impact",
+                "agent": "ImpactAgent",
+                "llm": llm_trace_build_meta(before, after),
+            },
+            "product_id": product_id,
+            "risk_score": result.get("risk_score", 0),
+            "business_impact": result.get("business_impact", "unknown"),
+            "downstream_products": len(result.get("downstream_products", [])),
+            "affected_pipelines": len(result.get("affected_pipelines", [])),
+            "affected_users": result.get("affected_users", 0),
+            "mitigation_suggestions": result.get("mitigation_suggestions", [])
+        }
 
 
 @tool
@@ -547,13 +683,23 @@ def dpos_ask_question(question: str) -> Dict:
     Returns:
         Answer with sources
     """
-    runner = _get_agent_runner()
-    result = runner["ask_question"](question)
-    return {
-        "question": question,
-        "answer": result.get("answer", "No answer found"),
-        "sources": result.get("sources", [])
-    }
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        from src.core.llm import llm_trace_snapshot, llm_trace_build_meta
+
+        before = llm_trace_snapshot()
+        runner = _get_agent_runner()
+        result = runner["ask_question"](question)
+        after = llm_trace_snapshot()
+        return {
+            "_meta": {
+                "mcp_tool": "dpos_ask_question",
+                "agent": "QAAgent",
+                "llm": llm_trace_build_meta(before, after),
+            },
+            "question": question,
+            "answer": result.get("answer", "No answer found"),
+            "sources": result.get("sources", [])
+        }
 
 
 @tool
@@ -568,14 +714,24 @@ def dpos_discover_products(query: str) -> Dict:
     Returns:
         Discovered products and recommendations
     """
-    runner = _get_agent_runner()
-    result = runner["discover_products"](query)
-    return {
-        "query": query,
-        "products_found": len(result.get("discovered_products", [])),
-        "products": result.get("discovered_products", []),
-        "recommendations": result.get("recommendations", [])
-    }
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        from src.core.llm import llm_trace_snapshot, llm_trace_build_meta
+
+        before = llm_trace_snapshot()
+        runner = _get_agent_runner()
+        result = runner["discover_products"](query)
+        after = llm_trace_snapshot()
+        return {
+            "_meta": {
+                "mcp_tool": "dpos_discover_products",
+                "agent": "DiscoveryAgent",
+                "llm": llm_trace_build_meta(before, after),
+            },
+            "query": query,
+            "products_found": len(result.get("discovered_products", [])),
+            "products": result.get("discovered_products", []),
+            "recommendations": result.get("recommendations", [])
+        }
 
 
 @tool
@@ -590,7 +746,20 @@ def dpos_monitor_slas(product_ids: List[str] = None) -> Dict:
     Returns:
         SLA compliance report with breaches and at-risk SLAs
     """
-    return _run_sla_agent(product_ids)
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        from src.core.llm import llm_trace_snapshot, llm_trace_build_meta
+
+        before = llm_trace_snapshot()
+        result = _run_sla_agent(product_ids)
+        after = llm_trace_snapshot()
+        return {
+            "_meta": {
+                "mcp_tool": "dpos_monitor_slas",
+                "agent": "SLAAgent",
+                "llm": llm_trace_build_meta(before, after),
+            },
+            **result,
+        }
 
 
 @tool
@@ -605,7 +774,20 @@ def dpos_generate_insights(time_range_days: int = 30) -> Dict:
     Returns:
         Executive summary, key findings, and recommendations
     """
-    return _run_insights_agent(time_range_days)
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        from src.core.llm import llm_trace_snapshot, llm_trace_build_meta
+
+        before = llm_trace_snapshot()
+        result = _run_insights_agent(time_range_days)
+        after = llm_trace_snapshot()
+        return {
+            "_meta": {
+                "mcp_tool": "dpos_generate_insights",
+                "agent": "InsightsAgent",
+                "llm": llm_trace_build_meta(before, after),
+            },
+            **result,
+        }
 
 
 @tool
@@ -628,7 +810,8 @@ def dpos_cross_domain_impact(
     Returns:
         Cross-domain impact analysis and coordination plan
     """
-    return _run_cross_domain_agent(event_type, product_id, severity, description)
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        return _run_cross_domain_agent(event_type, product_id, severity, description)
 
 
 @tool
@@ -651,7 +834,8 @@ def dpos_generate_notifications(
     Returns:
         Generated notifications and escalation actions
     """
-    return _run_notification_agent(event_type, severity, product_id, description)
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        return _run_notification_agent(event_type, severity, product_id, description)
 
 
 @tool
@@ -666,7 +850,8 @@ def dpos_analyze_contract_evolution(contract_id: str) -> Dict:
     Returns:
         Threshold recommendations and new rule suggestions
     """
-    return _run_contract_evolution_agent(contract_id)
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        return _run_contract_evolution_agent(contract_id)
 
 
 @tool
@@ -681,7 +866,8 @@ def dpos_predict_issues(product_ids: List[str]) -> Dict:
     Returns:
         Predictions and preventive actions
     """
-    return _run_predictive_agent(product_ids)
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        return _run_predictive_agent(product_ids)
 
 
 @tool
@@ -696,7 +882,15 @@ def dpos_orchestrate_incidents(incident_ids: List[str]) -> Dict:
     Returns:
         Prioritized incidents and batch actions
     """
-    return _run_orchestrator_agent(incident_ids)
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        result = _run_orchestrator_agent(incident_ids)
+        return {
+            "_meta": {
+                "mcp_tool": "dpos_orchestrate_incidents",
+                "agent": "OrchestratorAgent",
+            },
+            **result,
+        }
 
 
 # ============================================================================
@@ -716,17 +910,18 @@ def dpos_extract_knowledge(text: str, source: str = "api") -> Dict:
     Returns:
         Extracted entities and relationships
     """
-    try:
-        from src.knowledge.ontology_extractor import OntologyExtractor
-        extractor = OntologyExtractor()
-        result = extractor.extract(text, source)
-        return {
-            "entities": result.get("entities", []),
-            "relationships": result.get("relationships", []),
-            "confidence": result.get("confidence", 0)
-        }
-    except Exception as e:
-        return {"error": str(e), "entities": [], "relationships": []}
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr):
+        try:
+            from src.knowledge.ontology_extractor import OntologyExtractor
+            extractor = OntologyExtractor()
+            result = extractor.extract(text, source)
+            return {
+                "entities": result.get("entities", []),
+                "relationships": result.get("relationships", []),
+                "confidence": result.get("confidence", 0)
+            }
+        except Exception as e:
+            return {"error": str(e), "entities": [], "relationships": []}
 
 
 @tool
@@ -737,7 +932,7 @@ def dpos_list_slas() -> List[Dict]:
     Returns:
         List of SLAs with their targets and compliance status
     """
-    with Neo4jManager() as mgr:
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr), Neo4jManager() as mgr:
         query = """
         MATCH (s:SLA)
         OPTIONAL MATCH (c:Contract)-[:HAS_SLA]->(s)
@@ -760,7 +955,7 @@ def dpos_list_contracts() -> List[Dict]:
     Returns:
         List of contracts with their rules and products
     """
-    with Neo4jManager() as mgr:
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr), Neo4jManager() as mgr:
         query = """
         MATCH (c:Contract)
         OPTIONAL MATCH (c)<-[:HAS_CONTRACT]-(p:DataProduct)
@@ -787,7 +982,7 @@ def dpos_get_contract_rules(contract_id: str) -> Dict:
     Returns:
         Contract details with all rules
     """
-    with Neo4jManager() as mgr:
+    with redirect_stdout(sys.stderr), redirect_stderr(sys.stderr), Neo4jManager() as mgr:
         query = """
         MATCH (c:Contract {id: $id})
         OPTIONAL MATCH (c)-[:HAS_RULE]->(r:Rule)
@@ -831,6 +1026,7 @@ def get_all_tools() -> List:
         dpos_analyze_contract_evolution,
         dpos_predict_issues,
         dpos_orchestrate_incidents,
+        dpos_supervisor_query,
         # Knowledge and governance tools
         dpos_extract_knowledge,
         dpos_list_slas,
@@ -874,7 +1070,8 @@ def get_tools_by_category() -> Dict[str, List]:
             dpos_generate_notifications,
             dpos_analyze_contract_evolution,
             dpos_predict_issues,
-            dpos_orchestrate_incidents
+            dpos_orchestrate_incidents,
+            dpos_supervisor_query,
         ],
         "governance": [
             dpos_list_slas,

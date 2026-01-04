@@ -1,0 +1,37 @@
+{
+  "domains": [
+    {
+      "id": "DOM001",
+      "name": "Customer",
+      "description": "Customer master data and transactions including profiles, preferences, and purchase history",
+      "owner": "customer-team@company.com",
+      "team": "Customer Platform",
+      "slack_channel": "#customer-data",
+      "cost_center": "CC-1001",
+      "created_at": "2024-01-15T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z"
+    },
+    {
+      "id": "DOM002",
+      "name": "Order",
+      "description": "Order processing and fulfillment including orders, shipments, and delivery tracking",
+      "owner": "order-team@company.com",
+      "team": "Order Management",
+      "slack_channel": "#order-data",
+      "cost_center": "CC-2001",
+      "created_at": "2024-01-15T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z"
+    },
+    {
+      "id": "DOM003",
+      "name": "Inventory",
+      "description": "Product catalog and stock management including inventory levels and product information",
+      "owner": "inventory-team@company.com",
+      "team": "Supply Chain",
+      "slack_channel": "#inventory-data",
+      "cost_center": "CC-3001",
+      "created_at": "2024-01-15T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z"
+    }
+  ]
+}

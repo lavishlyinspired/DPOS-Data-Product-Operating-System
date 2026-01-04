@@ -4,6 +4,7 @@ JSON structured logging with correlation IDs and context propagation.
 """
 import logging
 import json
+import os
 import sys
 import uuid
 from datetime import datetime, UTC
@@ -113,7 +114,12 @@ class StructuredLogger:
     def _configure(self):
         """Configure the logger with JSON handler."""
         if not self.logger.handlers:
-            handler = logging.StreamHandler(sys.stdout)
+            # Important: MCP stdio servers use stdout for JSON-RPC. Any logs on stdout
+            # will be interpreted as protocol messages by clients like Claude Desktop.
+            # Allow routing logs to stderr via env var.
+            stream_name = os.getenv("DPOS_LOG_STREAM", "stdout").strip().lower()
+            stream = sys.stderr if stream_name in {"stderr", "err", "2"} else sys.stdout
+            handler = logging.StreamHandler(stream)
             handler.setFormatter(JSONFormatter())
             self.logger.addHandler(handler)
             self.logger.setLevel(getattr(logging, settings.log_level))

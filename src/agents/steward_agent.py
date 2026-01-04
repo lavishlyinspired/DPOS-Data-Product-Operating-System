@@ -75,30 +75,33 @@ def build_steward_agent():
         """Analyze the incident and determine quality issues with LLM."""
         log.info(f"Analyzing incident {state['incident_id']}")
 
-        details = get_incident_details.invoke(state["incident_id"])
+        details = get_incident_details.invoke({"incident_id": state["incident_id"]})
         product_id = details.get("product_id")
         product_name = details.get("product_name", product_id)
 
-        analysis = f"Incident Type: {details.get('type', 'unknown')}\n"
+        analysis = f"Incident Type: {details.get('type') or 'unknown'}\n"
         analysis += f"Description: {details.get('description', 'N/A')}\n"
 
         quality_score = 85.0
         if product_id:
-            health = get_product_health.invoke(product_id)
+            health = get_product_health.invoke({"product_id": product_id})
             analysis += f"Product Health: {health.get('health', 'unknown')}\n"
             quality_score = health.get("quality_score", 85.0)
             analysis += f"Quality Score: {quality_score}\n"
 
         # LLM root cause analysis
         root_cause_result = analyze_root_cause.invoke(
-            incident_id=state["incident_id"],
-            incident_type=details.get("type", "data_quality_issue"),
-            description=details.get("description", "Unknown issue"),
-            affected_product=product_name or "unknown",
-            severity=state.get("severity", "medium"),
-            violation_details="",
-            historical_incidents=[]
+            {
+                "incident_id": state["incident_id"],
+                "incident_type": details.get("type") or "data_quality_issue",
+                "description": details.get("description") or "Unknown issue",
+                "affected_product": product_name or "unknown",
+                "severity": state.get("severity", "medium"),
+                "violation_details": "",
+                "historical_incidents": [],
+            }
         )
+
 
         log.info(
             f"Root cause analysis complete for steward review",
@@ -139,11 +142,13 @@ def build_steward_agent():
 
         # Use LLM for remediation planning
         remediation = create_remediation_plan.invoke(
-            incident_type="data_quality_critical",
-            root_cause=state.get("root_cause", "Unknown"),
-            severity="critical",
-            affected_systems=[state.get("product_name", state.get("product_id", "unknown"))],
-            available_resources=["on-call team", "rollback capability"]
+            {
+                "incident_type": "data_quality_critical",
+                "root_cause": state.get("root_cause", "Unknown"),
+                "severity": "critical",
+                "affected_systems": [state.get("product_name", state.get("product_id", "unknown"))],
+                "available_resources": ["on-call team", "rollback capability"],
+            }
         )
 
         immediate_actions = remediation.get("immediate_actions", [])
@@ -175,11 +180,13 @@ def build_steward_agent():
 
         # Use LLM for remediation planning
         remediation = create_remediation_plan.invoke(
-            incident_type="data_quality_standard",
-            root_cause=state.get("root_cause", "Unknown"),
-            severity=severity,
-            affected_systems=[state.get("product_name", state.get("product_id", "unknown"))],
-            available_resources=None
+            {
+                "incident_type": "data_quality_standard",
+                "root_cause": state.get("root_cause", "Unknown"),
+                "severity": severity,
+                "affected_systems": [state.get("product_name", state.get("product_id", "unknown"))],
+                "available_resources": None,
+            }
         )
 
         if severity == "high":
@@ -218,20 +225,22 @@ def build_steward_agent():
 
         # Generate stakeholder narrative
         narrative_result = generate_incident_narrative.invoke(
-            incident={
-                "id": state["incident_id"],
-                "type": "data_quality_issue",
-                "severity": severity,
-                "product_name": state.get("product_name"),
-                "description": state.get("analysis"),
-                "status": state.get("status")
-            },
-            impact_analysis={
-                "quality_score": state.get("quality_score", 0),
-                "root_cause": state.get("root_cause"),
-                "confidence": state.get("root_cause_confidence")
-            },
-            actions_taken=state.get("remediation_steps", [])[:3]
+            {
+                "incident": {
+                    "id": state["incident_id"],
+                    "type": "data_quality_issue",
+                    "severity": severity,
+                    "product_name": state.get("product_name"),
+                    "description": state.get("analysis"),
+                    "status": state.get("status"),
+                },
+                "impact_analysis": {
+                    "quality_score": state.get("quality_score", 0),
+                    "root_cause": state.get("root_cause"),
+                    "confidence": state.get("root_cause_confidence"),
+                },
+                "actions_taken": state.get("remediation_steps", [])[:3],
+            }
         )
 
         if severity == "critical":
@@ -254,9 +263,11 @@ def build_steward_agent():
                 "governance_recommendations": len(state.get("governance_recommendations", []))
             }
             record_agent_execution.invoke(
-                state["incident_id"],
-                "StewardAgent",
-                str(outcome)
+                {
+                    "incident_id": state["incident_id"],
+                    "agent_name": "StewardAgent",
+                    "outcome": str(outcome),
+                }
             )
 
         return {

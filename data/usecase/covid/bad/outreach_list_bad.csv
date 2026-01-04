@@ -1,0 +1,11 @@
+customer_id,email,name,phone,address,segment,created_at,is_active
+INVALIDC19,not-an-email,Alejandro Rivera,+12025550101,"{""street"":""10 Harbor St""}",premium,2021-05-10T09:12:00Z,true
+C19CUST000002,duplicate@health.example,Duplicate ID,+12025550102,"{""street"":""22 Market Ave""}",standard,2021-05-11T10:05:00Z,true
+,missing.id@health.example,Missing ID,+12025550103,"{""street"":""305 Pine Rd""}",standard,2021-05-12T08:30:00Z,true
+C19CUST000099,nameless@health.example,,+12025550104,"{""street"":""77 Elm St""}",premium,2021-05-12T14:15:00Z,true
+C19CUST000100,badphone@health.example,Bad Phone,invalid-phone,"{""street"":""9 Lakeview Dr""}",standard,2021-05-13T11:45:00Z,true
+C19CUST000101,badsegment@health.example,Bad Segment,+12025550106,"{""street"":""410 Cedar Ln""}",invalid_segment,2021-05-13T16:20:00Z,true
+C19CUST000102,baddate@health.example,Bad Date,+12025550107,"{""street"":""18 Ridge Blvd""}",premium,invalid-date,true
+C19CUST000103,nulladdress@health.example,Null Address,+12025550108,null,standard,2021-05-14T12:00:00Z,true
+C19CUST000104,,Missing Email,+12025550109,"{""street"":""62 Walnut Ct""}",premium,2021-05-15T10:30:00Z,true
+C19CUST000105,olivia.martinez@health.example,Olivia Martinez,+12025550110,"{""street"":""88 Magnolia Way""}",vip,2021-05-15T15:55:00Z,true

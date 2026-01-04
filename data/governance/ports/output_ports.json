@@ -1,0 +1,107 @@
+{
+  "output_ports": [
+    {
+      "id": "outport_dp001_kafka",
+      "product_id": "DP001",
+      "name": "customer_profiles_kafka",
+      "type": "kafka",
+      "connection_string": "kafka://kafka.company.internal:9092",
+      "topic": "dpos.customer.profiles.validated",
+      "format": "avro",
+      "is_public": false,
+      "requires_approval": true,
+      "status": "active",
+      "created_at": "2024-01-20T00:00:00Z"
+    },
+    {
+      "id": "outport_dp001_api",
+      "product_id": "DP001",
+      "name": "customer_profiles_api",
+      "type": "api",
+      "endpoint_url": "/api/v1/products/DP001/data",
+      "http_method": "GET",
+      "is_public": false,
+      "requires_approval": true,
+      "status": "active",
+      "created_at": "2024-01-20T00:00:00Z"
+    },
+    {
+      "id": "outport_dp002_kafka",
+      "product_id": "DP002",
+      "name": "transactions_kafka",
+      "type": "kafka",
+      "connection_string": "kafka://kafka.company.internal:9092",
+      "topic": "dpos.customer.transactions.validated",
+      "format": "avro",
+      "is_public": false,
+      "requires_approval": true,
+      "status": "active",
+      "created_at": "2024-02-01T00:00:00Z"
+    },
+    {
+      "id": "outport_dp003_kafka",
+      "product_id": "DP003",
+      "name": "orders_kafka",
+      "type": "kafka",
+      "connection_string": "kafka://kafka.company.internal:9092",
+      "topic": "dpos.order.orders.validated",
+      "format": "avro",
+      "is_public": false,
+      "requires_approval": true,
+      "status": "active",
+      "created_at": "2024-02-15T00:00:00Z"
+    },
+    {
+      "id": "outport_dp004_kafka",
+      "product_id": "DP004",
+      "name": "shipments_kafka",
+      "type": "kafka",
+      "connection_string": "kafka://kafka.company.internal:9092",
+      "topic": "dpos.order.shipments.validated",
+      "format": "avro",
+      "is_public": false,
+      "requires_approval": false,
+      "status": "active",
+      "created_at": "2024-03-01T00:00:00Z"
+    },
+    {
+      "id": "outport_dp005_kafka",
+      "product_id": "DP005",
+      "name": "inventory_kafka",
+      "type": "kafka",
+      "connection_string": "kafka://kafka.company.internal:9092",
+      "topic": "dpos.inventory.levels.validated",
+      "format": "avro",
+      "is_public": false,
+      "requires_approval": false,
+      "status": "active",
+      "created_at": "2024-03-15T00:00:00Z"
+    },
+    {
+      "id": "outport_dp006_kafka",
+      "product_id": "DP006",
+      "name": "products_kafka",
+      "type": "kafka",
+      "connection_string": "kafka://kafka.company.internal:9092",
+      "topic": "dpos.inventory.catalog.validated",
+      "format": "avro",
+      "is_public": false,
+      "requires_approval": false,
+      "status": "active",
+      "created_at": "2024-01-20T00:00:00Z"
+    },
+    {
+      "id": "outport_dp006_s3",
+      "product_id": "DP006",
+      "name": "products_s3_export",
+      "type": "s3",
+      "bucket": "company-data-lake",
+      "prefix": "products/catalog/",
+      "format": "parquet",
+      "is_public": false,
+      "requires_approval": false,
+      "status": "active",
+      "created_at": "2024-01-20T00:00:00Z"
+    }
+  ]
+}

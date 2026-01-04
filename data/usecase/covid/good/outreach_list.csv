@@ -1,0 +1,11 @@
+customer_id,email,name,phone,address,segment,created_at,is_active
+C19CUST000001,alex.rivera@health.example,Alejandro Rivera,+12025550101,"{""street"":""10 Harbor St"",""city"":""Boston"",""state"":""MA"",""zip"":""02110""}",premium,2021-05-10T09:12:00Z,true
+C19CUST000002,priya.kapoor@health.example,Priya Kapoor,+12025550102,"{""street"":""22 Market Ave"",""city"":""Seattle"",""state"":""WA"",""zip"":""98101""}",vip,2021-05-11T10:05:00Z,true
+C19CUST000003,marcus.lee@health.example,Marcus Lee,+12025550103,"{""street"":""305 Pine Rd"",""city"":""Austin"",""state"":""TX"",""zip"":""78701""}",standard,2021-05-12T08:30:00Z,true
+C19CUST000004,sophia.chen@health.example,Sophia Chen,+12025550104,"{""street"":""77 Elm St"",""city"":""San Jose"",""state"":""CA"",""zip"":""95112""}",premium,2021-05-12T14:15:00Z,true
+C19CUST000005,daniel.okafor@health.example,Daniel Okafor,+12025550105,"{""street"":""9 Lakeview Dr"",""city"":""Chicago"",""state"":""IL"",""zip"":""60601""}",standard,2021-05-13T11:45:00Z,true
+C19CUST000006,amina.hassan@health.example,Amina Hassan,+12025550106,"{""street"":""410 Cedar Ln"",""city"":""Phoenix"",""state"":""AZ"",""zip"":""85004""}",vip,2021-05-13T16:20:00Z,true
+C19CUST000007,liam.wright@health.example,Liam Wright,+12025550107,"{""street"":""18 Ridge Blvd"",""city"":""Denver"",""state"":""CO"",""zip"":""80202""}",standard,2021-05-14T09:05:00Z,true
+C19CUST000008,emma.davis@health.example,Emma Davis,+12025550108,"{""street"":""500 Spruce Ave"",""city"":""Portland"",""state"":""OR"",""zip"":""97205""}",premium,2021-05-14T12:00:00Z,true
+C19CUST000009,henry.nguyen@health.example,Henry Nguyen,+12025550109,"{""street"":""62 Walnut Ct"",""city"":""San Diego"",""state"":""CA"",""zip"":""92101""}",standard,2021-05-15T10:30:00Z,true
+C19CUST000010,olivia.martinez@health.example,Olivia Martinez,+12025550110,"{""street"":""88 Magnolia Way"",""city"":""Houston"",""state"":""TX"",""zip"":""77002""}",vip,2021-05-15T15:55:00Z,true

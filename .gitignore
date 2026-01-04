@@ -1,3 +1,5 @@
+docs
+.md
 .venv
 pycache
 __pycache__

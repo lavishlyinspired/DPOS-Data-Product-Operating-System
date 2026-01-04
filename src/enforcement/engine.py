@@ -1,11 +1,14 @@
 from typing import List, Dict, Any
-from src.incidents.incident_manager import IncidentManager
+
+from src.metrics.incident_manager import IncidentManager
+from src.metrics.collector import MetricsCollector
+from src.kafka.producer import DPOSProducer
 
 from src.agents.agent_runner import handle_incident
-from src.metrics.collector import MetricsCollector
 
 incident_mgr = IncidentManager()
 metrics = MetricsCollector()
+producer = DPOSProducer()
 
 class EnforcementEngine:
     """
@@ -45,10 +48,15 @@ class EnforcementEngine:
         print(f"[ENFORCEMENT] Action: {action.upper()}")
 
         if action in ("passed", "warned"):
-            print(
-                f"   [OK] Writing {len(valid_data)} records to Output Topic: "
-                f"{output_port_config.get('topic')}"
-            )
+            topic = output_port_config.get("topic")
+            if topic:
+                print(f"   [OK] Publishing {len(valid_data)} records to topic: {topic}")
+                for row in valid_data:
+                    producer.publish(topic, row)
+            else:
+                print(f"   [OK] Publishing {len(valid_data)} records to default valid topic")
+                for row in valid_data:
+                    producer.publish_valid(product_id, row)
 
         elif action == "blocked":
             # Step 1: Create incident
@@ -73,7 +81,8 @@ class EnforcementEngine:
             handle_incident(incident_id, severity="high")
 
         elif action == "quarantined":
-            print(
-                f"   [QUARANTINE] Writing {len(valid_data)} good records "
-                f"and {len(invalid_data)} bad records to DLQ."
-            )
+            print(f"   [QUARANTINE] Publishing {len(valid_data)} good records and {len(invalid_data)} bad records (DLQ).")
+            for row in valid_data:
+                producer.publish_valid(product_id, row)
+            for row in invalid_data:
+                producer.publish_dlq(product_id, row, reason="contract_violation")
